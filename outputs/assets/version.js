@@ -1,4 +1,4 @@
 // Update this single value for each release: major.minor.patch.
-window.GermanWorksheetsVersion = '1.2.6';
+window.GermanWorksheetsVersion = '1.3.1';
 const versionLabel = document.getElementById('app-version');
 if (versionLabel) versionLabel.textContent = 'Version ' + window.GermanWorksheetsVersion;

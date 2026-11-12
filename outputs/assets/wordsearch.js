@@ -6,6 +6,8 @@ let pageWidth=612,pageHeight=792;
 
 const song=document.getElementById('song'),generate=document.getElementById('generate'),download=document.getElementById('download'),message=document.getElementById('message'),pages=document.getElementById('pages');let sheets=[];let lastStudentCount=0,lastChosen=[];
 const clueFont=document.getElementById('clue-font');
+const puzzleSize=document.getElementById('puzzle-size');
+puzzleSize.addEventListener('change',()=>{sheets=[];pages.replaceChildren();download.disabled=true;message.textContent='Size updated. Click Create word search.'});
 const clueMode=document.getElementById('clue-mode');
 const gridCase=document.getElementById('grid-case');
 const verseMode=document.getElementById('verse-mode');
@@ -44,25 +46,25 @@ function canvasPage(){const cv=document.createElement('canvas');cv.width=pageWid
 function wrapped(c,text,width){const lines=[];let line='';for(const w of text.split(/\s+/)){if(line&&c.measureText(line+' '+w).width>width){lines.push(line);line=w}else line+=(line?' ':'')+w}if(line)lines.push(line);return lines}
 function drawSongTitle(c,title,verse,subtitle,fraktur){
  const titleFont=fraktur?((clueFont.value==='Handschrift'?'28px ':'20px ')+puzzleFontFamily()):'bold 20px Arial';
- c.font=titleFont;const lines=wrapped(c,fraktur?puzzleFontText(title):title,(pageWidth-96));let y=40,lastWidth=0;
- for(let i=0;i<lines.length;i++){c.font=titleFont;lastWidth=Math.min((pageWidth-96),c.measureText(lines[i]).width);c.fillText(lines[i],48,y,(pageWidth-96));if(i<lines.length-1)y+=(clueFont.value==='Handschrift'?32:25)}
+ c.font=titleFont;const lines=wrapped(c,fraktur?puzzleFontText(title):title,(pageWidth-2*puzzleMargins.side));let y=puzzleMargins.titleBaseline,lastWidth=0;
+ for(let i=0;i<lines.length;i++){c.font=titleFont;lastWidth=Math.min((pageWidth-2*puzzleMargins.side),c.measureText(lines[i]).width);c.fillText(lines[i],puzzleMargins.side,y,(pageWidth-2*puzzleMargins.side));if(i<lines.length-1)y+=(clueFont.value==='Handschrift'?32:25)}
  const suffix=' · '+(typeof verse==='string'?'Verses ':'Verse ')+verse;c.font='bold 20px Arial';
- if(lastWidth+c.measureText(suffix).width<=(pageWidth-96))c.fillText(suffix,48+lastWidth,y);
- else{y+=(clueFont.value==='Handschrift'?32:25);c.fillText(suffix.trim().replace(/^· /,''),48,y,(pageWidth-96))}
- y+=(clueFont.value==='Handschrift'?32:25);c.font='11px Arial';c.fillText(subtitle,48,y,(pageWidth-96));return y+24;
+ if(lastWidth+c.measureText(suffix).width<=(pageWidth-2*puzzleMargins.side))c.fillText(suffix,puzzleMargins.side+lastWidth,y);
+ else{y+=(clueFont.value==='Handschrift'?32:25);c.fillText(suffix.trim().replace(/^· /,''),puzzleMargins.side,y,(pageWidth-2*puzzleMargins.side))}
+ y+=(clueFont.value==='Handschrift'?32:25);c.font='11px Arial';c.fillText(subtitle,puzzleMargins.side,y,(pageWidth-2*puzzleMargins.side));return y+24;
 }
 function renderPuzzle(entries,answer,verse=1,title='Song'){
  const fraktur=(clueFont.value==='fraktur'||clueFont.value==='Handschrift'),clueStyle=fraktur?((clueFont.value==='Handschrift'?'22px ':'14px ')+puzzleFontFamily()):'12px Arial';let {cv,c}=canvasPage();const result=[cv];
  const top=drawSongTitle(c,title,verse,answer?'Answer key':(clueMode.value==='words'?'Find the words in the list: across, down or diagonally.':'Fill in the missing words, then find them: across, down or diagonally.'),fraktur);
- const grid=entries.grid,size=grid.length,cell=Math.min(25,(pageWidth-96)/size,Math.max(120,(pageHeight-327)-top)/size),left=(pageWidth-size*cell)/2;
+ const grid=entries.grid,size=grid.length,cell=puzzleCellSize(size,size,top,pageWidth,pageHeight,puzzleSize.value),left=(pageWidth-size*cell)/2;
  if(answer){c.strokeStyle='#b5d6be';c.lineWidth=cell*.78;c.lineCap='round';for(const e of entries){c.beginPath();c.moveTo(left+(e.x+.5)*cell,top+(e.y+.5)*cell);c.lineTo(left+(e.x+e.dx*(e.word.length-1)+.5)*cell,top+(e.y+e.dy*(e.word.length-1)+.5)*cell);c.stroke()}}
  c.fillStyle='#202822';c.textAlign='center';c.font=Math.max(7,cell*(clueFont.value==='Handschrift'?1:.62))+(fraktur?('px '+puzzleFontFamily()):'px Arial');for(let y=0;y<size;y++)for(let x=0;x<size;x++)c.fillText(gridCase.value==='lower'?grid[y][x].toLocaleLowerCase('de-DE'):grid[y][x],left+(x+.5)*cell,top+(y+.72)*cell);c.textAlign='left';
  let y=top+size*cell+28;c.font=clueStyle;
- const clues=entries.map(e=>{const text=(answer||clueMode.value==='words')?e.raw:e.line.slice(0,e.index)+'________'+e.line.slice(e.index+e.raw.length);return wrapped(c,e.number+'. '+(fraktur?puzzleFontText(text):text),((pageWidth-120)/2))});
+ const clues=entries.map(e=>{const text=(answer||clueMode.value==='words')?e.raw:e.line.slice(0,e.index)+puzzleAnswerBlank(e.raw)+e.line.slice(e.index+e.raw.length);return wrapped(c,e.number+'. '+(fraktur?puzzleFontText(text):text),((pageWidth-2*puzzleMargins.side-24)/2))});
  const mid=Math.ceil(clues.length/2),groups=[clues.slice(0,mid),clues.slice(mid)],positions=[{item:0,line:0},{item:0,line:0}];let columnTop=y;const lineHeight=clueFont.value==='Handschrift'?26:17;
  while(positions.some((p,i)=>p.item<groups[i].length)){
-  for(let col=0;col<2;col++){const pos=positions[col],items=groups[col],x=col?(pageWidth/2+12):48;let cursor=columnTop;c.font=clueStyle;
-   while(pos.item<items.length){const lines=items[pos.item],space=Math.floor(((pageHeight-48)-cursor)/lineHeight)+1,remaining=lines.length-pos.line;if(space<=0)break;if(!pos.line&&remaining>space&&remaining*lineHeight<(pageHeight-242))break;const count=Math.min(space,remaining);for(let k=0;k<count;k++){c.fillText(lines[pos.line++],x,cursor,((pageWidth-120)/2));cursor+=lineHeight}if(pos.line<lines.length)break;pos.item++;pos.line=0;cursor+=8}
+  for(let col=0;col<2;col++){const pos=positions[col],items=groups[col],x=col?(pageWidth/2+12):puzzleMargins.side;let cursor=columnTop;c.font=clueStyle;
+   while(pos.item<items.length){const lines=items[pos.item],space=Math.floor(((pageHeight-puzzleMargins.bottom)-cursor)/lineHeight)+1,remaining=lines.length-pos.line;if(space<=0)break;if(!pos.line&&remaining>space&&remaining*lineHeight<(pageHeight-242))break;const count=Math.min(space,remaining);for(let k=0;k<count;k++){c.fillText(lines[pos.line++],x,cursor,((pageWidth-2*puzzleMargins.side-24)/2));cursor+=lineHeight}if(pos.line<lines.length)break;pos.item++;pos.line=0;cursor+=8}
   }
   if(positions.some((p,i)=>p.item<groups[i].length)){({cv,c}=canvasPage());result.push(cv);columnTop=drawSongTitle(c,title,verse,answer?'Answers · continued':clueMode.value==='words'?'Words · continued':'Song lines · continued',fraktur)}
  }
@@ -72,9 +74,9 @@ function renderPuzzle(entries,answer,verse=1,title='Song'){
 function splitVerses(text){return text.trim().split(/\r?\n[ \t]*\r?\n(?:[ \t]*\r?\n)*/).map(v=>v.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)).filter(v=>v.length)}
 async function create(){download.disabled=true;pages.replaceChildren();sheets=[];reviewWords();const verses=puzzleVerses(song.value);if(!verses.length){message.textContent='Paste a song first.';return}
 for(let v=0;v<verses.length;v++){if(verses[v].length>40){message.textContent='Please use up to 40 lines per word search, or choose one word search per verse.';return}const invalid=verses[v].map((s,i)=>optionsFor(s,v,i).length?null:i+1).filter(Boolean);if(invalid.length){message.textContent='Verse '+(v+1)+': choose a word (3–24 letters) under Choose words, or revise lines: '+invalid.join(', ');return}}
-generate.disabled=true;song.disabled=true;clueFont.disabled=true;verseMode.disabled=true;clueMode.disabled=true;gridCase.disabled=true;const pending=[],answers=[],chosen=[];
+generate.disabled=true;puzzleSize.disabled=true;song.disabled=true;clueFont.disabled=true;verseMode.disabled=true;clueMode.disabled=true;gridCase.disabled=true;const pending=[],answers=[],chosen=[];
 try{if((clueFont.value==='fraktur'||clueFont.value==='Handschrift'))await document.fonts.load(((clueFont.value==='Handschrift'?'22px ':'14px ')+puzzleFontFamily()));for(let v=0;v<verses.length;v++){message.textContent='Creating verse '+(v+1)+' of '+verses.length+'…';await new Promise(resolve=>setTimeout(resolve,30));const puzzle=build(verses[v],v);if(puzzle.remaining.length){message.textContent='Verse '+(v+1)+': could not place every answer. Try again or revise lines '+puzzle.remaining.map(e=>e.id+1).join(', ')+'.';return}const ordered=puzzle.entries;pending.push(...renderPuzzle(ordered,false,verseLabel(v),verses[0][0]).map(cv=>{cv.verse=v+1;return cv}));answers.push(...renderPuzzle(ordered,true,verseLabel(v),verses[0][0]).map(cv=>{cv.verse=v+1;return cv}));chosen.push(...ordered.map(e=>({...e,verse:v+1})))}
-lastStudentCount=pending.length;lastChosen=chosen;sheets=[...pending,...answers];for(const cv of sheets)pages.append(cv);reviewWords();message.textContent=verses.length+' word search'+(verses.length===1?'':'s')+' · puzzles first, answer keys afterward.';download.disabled=false}catch(e){message.textContent='Could not create the word searches. Try fewer or shorter lines.';console.error(e)}finally{generate.disabled=false;song.disabled=false;clueFont.disabled=false;verseMode.disabled=false;clueMode.disabled=false;gridCase.disabled=false}}
+lastStudentCount=pending.length;lastChosen=chosen;sheets=[...pending,...answers];for(const cv of sheets)pages.append(cv);reviewWords();message.textContent=verses.length+' word search'+(verses.length===1?'':'s')+' · puzzles first, answer keys afterward.';download.disabled=false}catch(e){message.textContent='Could not create the word searches. Try fewer or shorter lines.';console.error(e)}finally{generate.disabled=false;puzzleSize.disabled=false;song.disabled=false;clueFont.disabled=false;verseMode.disabled=false;clueMode.disabled=false;gridCase.disabled=false}}
 
 verseMode.addEventListener('change',()=>{wordChoices={};sheets=[];pages.replaceChildren();download.disabled=true;reviewWords();message.textContent='Click Create word search to use this layout.'});gridCase.addEventListener('change',()=>{if(sheets.length)create()});clueMode.addEventListener('change',()=>{if(sheets.length)create()});clueFont.addEventListener('change',()=>{if(sheets.length)create()});generate.addEventListener('click',create);song.addEventListener('input',()=>{download.disabled=true;pages.replaceChildren();sheets=[];wordChoices={};reviewWords();message.textContent='Click Create word search to use your changes.'});download.addEventListener('click',()=>{if(!sheets.length)return;const title=song.value.trim().split(/\s+/).slice(0,3).join(' ').replace(/[<>:"/\\|?*\x00-\x1f]/g,'');GermanPDF.download(makePDF(sheets),'WS '+(title||'Word Search')+'.pdf')});
 

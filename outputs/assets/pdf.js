@@ -23,18 +23,17 @@ window.GermanPDF={
   const file=typeof File==='function'?new File([blob],name,{type:'application/pdf'}):null;
   let shareable=false;try{shareable=!!(file&&navigator.share&&navigator.canShare?.({files:[file]}))}catch{}
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  if(!ios&&!shareable){this.save(blob,name);return}
   document.getElementById('pdf-ready-dialog')?.close();
   const dialog=document.createElement('dialog');dialog.id='pdf-ready-dialog';
   dialog.style.cssText='width:calc(100% - 32px);max-width:420px;max-height:85vh;overflow:auto;box-sizing:border-box;border:1px solid #a9b9ad;border-radius:14px;padding:24px;background:white;color:#23342c;font:16px/1.5 system-ui';
-  const heading=document.createElement('h2');heading.id='pdf-ready-title';heading.textContent='Your PDF is ready';heading.style.margin='0 0 12px';dialog.setAttribute('aria-labelledby',heading.id);
+  const heading=document.createElement('h2');heading.id='pdf-ready-title';heading.textContent='Print or save your PDF';heading.style.margin='0 0 12px';dialog.setAttribute('aria-labelledby',heading.id);
   const filename=document.createElement('p');filename.textContent=name;filename.style.overflowWrap='anywhere';
-  const help=document.createElement('p');help.textContent=shareable?'Tap Share PDF, then choose Print. If Print is missing, choose Save to Files, open the saved PDF, and use Share → Print.':'Open or save the PDF, then use Share → Print. If Print is missing, save it to Files and print from there. For the Share PDF button, open this site in Safari over HTTPS.';
+  const help=document.createElement('p');help.style.whiteSpace='pre-line';help.textContent=shareable?'1. Tap Share PDF below.\n2. Scroll down in the share menu and choose Print.\nOr choose Save to Files to keep a copy.':ios?'1. Tap Open PDF below.\n2. Tap Safari’s Share icon (square with an up arrow).\n3. Scroll down and choose Print.\nIf Print is missing, choose Save to Files, then open that file and use Share → Print.':'Open the PDF to print it, or choose Save PDF to download a copy.';
   const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap';
   const message=document.createElement('p');message.setAttribute('role','status');
   const button=(label,action)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='font:inherit;min-height:44px;padding:10px 14px;border:1px solid #9aaea0;border-radius:8px;background:#f0f3f0;color:#23342c';b.addEventListener('click',action);actions.append(b);return b};
   // A fresh tap after generation gives iOS the user activation required for file sharing.
-  if(shareable){const share=button('Share PDF',async()=>{share.disabled=true;message.textContent='';try{await navigator.share({files:[file]})}catch(e){if(e.name!=='AbortError')message.textContent='Sharing was unavailable. Try Open PDF or Save PDF below.'}finally{share.disabled=false}})}
+  if(shareable){const share=button('Share PDF',async()=>{share.disabled=true;message.textContent='';try{await navigator.share({files:[file]})}catch(e){if(e.name!=='AbortError')message.textContent='Safari could not share this PDF. Tap Open PDF, then use the browser’s Share menu, or save it to Files.'}finally{share.disabled=false}});share.style.background='#28583d';share.style.color='white'}else if(ios){const unavailable=button('Share PDF — unavailable',()=>{});unavailable.disabled=true;const reason=document.createElement('p');reason.textContent=window.isSecureContext===false?'Direct sharing needs an HTTPS connection. Use Open PDF below for now.':'Safari is not allowing this page to share PDF files. Use Open PDF below and Safari’s own Share menu.';help.textContent+='\n\n'+reason.textContent}
   const url=URL.createObjectURL(blob),open=document.createElement('a');open.href=url;open.target='_blank';open.rel='noopener';open.textContent='Open PDF';open.style.cssText='display:inline-flex;align-items:center;min-height:44px;padding:0 12px;color:#28583d';actions.append(open);
   button('Save PDF',()=>this.save(blob,name));button('Done',()=>dialog.close());
   dialog.append(heading,filename,help,actions,message);document.body.append(dialog);

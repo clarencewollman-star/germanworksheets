@@ -1,0 +1,8 @@
+**
+!Dockerfile
+!nginx.conf
+!outputs/
+!outputs/*.html
+!outputs/assets/
+!outputs/assets/*.js
+!outputs/assets/*.css

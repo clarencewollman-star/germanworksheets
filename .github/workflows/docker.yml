@@ -1,0 +1,45 @@
+name: Build and publish Docker image
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript
+        run: for file in outputs/assets/*.js; do node --check "$file"; done
+      - name: Build image
+        run: docker build -t germanworksheets:test .
+      - name: Test served pages and assets
+        run: |
+          docker run -d --name worksheets-test -p 8080:80 germanworksheets:test
+          trap 'docker logs worksheets-test; docker rm -f worksheets-test' EXIT
+          for attempt in $(seq 1 20); do
+            if curl -fsS http://localhost:8080/ > /dev/null; then break; fi
+            sleep 1
+          done
+          for file in outputs/*.html outputs/assets/*.js outputs/assets/*.css; do
+            curl -fsS "http://localhost:8080/${file#outputs/}" -o /tmp/served-file
+            cmp "$file" /tmp/served-file
+          done
+      - name: Sign in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish tested image
+        if: github.event_name != 'pull_request'
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          docker tag germanworksheets:test "$IMAGE:latest"
+          docker tag germanworksheets:test "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:$GITHUB_SHA"

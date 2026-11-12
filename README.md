@@ -4,6 +4,8 @@ Browser-based German handwriting, flashcards, crossword, word search, sound blen
 
 The maintained website is in `outputs/`. The individual generators and Packet Builder share `outputs/assets/`; update that source once. Downloaded PDFs and historical scratch work are excluded from Git and Docker.
 
+The interface uses AdminLTE 4.10.0, with its CSS, JavaScript, and MIT license bundled in `outputs/assets/` for offline use. Shared navigation and styling live in `app-shell.js` and `app-theme.css`. Source: https://adminlte.io/ and https://www.npmjs.com/package/admin-lte/v/4.10.0.
+
 ## Run with Docker
 
 After the GitHub Actions build succeeds:

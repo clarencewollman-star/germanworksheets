@@ -1,0 +1,26 @@
+/* AdminLTE overrides shared by all tools; worksheet artwork stays unchanged. */
+:root{--bs-primary:#28644a;--bs-primary-rgb:40,100,74;--lte-sidebar-width:260px}
+body.gw-ui{margin:0;background:#f4f6f9;color:#26352f;font:16px/1.5 system-ui,sans-serif}
+.gw-ui .app-main{max-width:none;width:100%;min-width:0;margin:0;padding:28px 32px}
+.gw-ui h1{font-size:30px;font-weight:600;margin:0 0 20px}.gw-ui h2{font-size:22px}
+.gw-ui .app-header{min-height:62px;border-bottom:1px solid #dce2e7}.gw-ui .app-header .container-fluid{justify-content:flex-start;gap:16px}
+.gw-ui .gw-menu{font-size:22px;min-width:44px;min-height:44px;padding:4px 10px;color:#43534c}.gw-current{font-weight:600}.gw-brand-mobile{display:none}
+.gw-ui .app-sidebar{background:#243c32!important}.gw-ui .sidebar-brand{padding:14px 10px;height:62px}.gw-ui .brand-link{gap:10px;color:white;text-decoration:none}.gw-ui .brand-text{font-size:17px}.gw-logo{font-size:13px;font-weight:750;background:#e2eee7;color:#244c38;padding:7px;border-radius:7px}
+.gw-ui .sidebar-wrapper{padding:20px 10px}.gw-ui .sidebar-menu .nav-link{min-height:46px;border-radius:6px;color:#dbe6df;gap:10px;margin-bottom:5px}.gw-ui .sidebar-menu .nav-link.active{background:#48785e;color:white}.gw-ui .sidebar-menu .nav-link:hover{background:#365744}.gw-nav-icon{font:600 17px Georgia,serif;width:24px;text-align:center}
+.gw-ui .app-footer{font-size:13px;color:#66776d;padding:16px 32px}.gw-ui .app-main>.card{padding:24px;border:1px solid #dce2e7;border-top:3px solid #48785e;border-radius:8px;box-shadow:0 2px 4px #00000006;margin-bottom:24px}
+.gw-ui .actions{display:flex;gap:16px;align-items:end;flex-wrap:wrap}.gw-ui label{font-size:14px;font-weight:600;margin-bottom:7px}.gw-ui textarea.form-control{min-height:160px;width:100%;font:16px/1.6 system-ui}.gw-ui .form-control,.gw-ui .form-select{border:1px solid #b8c6bf;border-radius:6px;min-height:44px;padding:8px 12px;font:16px/1.5 system-ui;background-color:white;color:#26352f}.gw-ui .actions .form-control{max-width:150px}.gw-ui .form-select{padding-right:36px}.gw-ui .btn{min-height:44px;font:600 15px/1.5 system-ui;border-radius:6px;padding:10px 16px}.gw-ui .btn-primary,.gw-ui .primary{background:#28644a;border-color:#28644a;color:white}.gw-ui .btn-primary:hover{background:#1c4e38;border-color:#1c4e38}.gw-ui .btn-outline-secondary{background:white;color:#42594b;border-color:#afbeb5}.gw-ui input[type=checkbox]{accent-color:#28644a}.gw-ui .form-check-input:checked{background-color:#28644a;border-color:#28644a}
+.gw-ui :focus-visible{outline:3px solid #be8e37;outline-offset:3px}.gw-ui p{color:#57675e}.gw-ui details>summary{padding:10px 0;font-weight:600;cursor:pointer}.gw-ui table{width:100%}.gw-ui td{overflow-wrap:anywhere}.gw-ui .settings iframe{width:100%}.gw-ui #preview,.gw-ui #pages{min-width:0}.gw-ui [hidden]{display:none!important}
+.gw-ui.gw-embedded main{max-width:none;margin:0;padding:8px}.gw-ui.gw-embedded .card{box-shadow:none;border:0;padding:8px}.gw-ui.gw-embedded .form-control{max-width:100%}
+.gw-ui .gw-home header{margin:0 0 28px}.gw-ui .gw-home header h1{margin-bottom:8px}.gw-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;max-width:1200px}.gw-ui .tool{max-width:none;width:100%;border:1px solid #dce2e7;border-top:3px solid #48785e;border-radius:8px;text-decoration:none;color:inherit;transition:box-shadow .15s}.gw-ui .tool:hover{box-shadow:0 6px 18px #23342c18}.gw-ui .tool .sample{display:none}.gw-ui .tool .content{padding:24px;display:flex;flex-direction:column;align-items:flex-start;height:100%}.gw-ui .tool p{flex:1}.gw-ui .tool .action{margin-top:8px}
+@media(max-width:991.98px){.gw-ui .app-main{padding:22px 18px}.gw-ui .app-footer{padding:16px 18px}.gw-brand-mobile{display:block;color:#28583d;text-decoration:none;font-weight:600}.gw-current{display:none}}
+@media(max-width:600px){.gw-tools{grid-template-columns:1fr}.gw-ui .app-main>.card{padding:18px}.gw-ui h1{font-size:26px}.gw-ui .actions>div{max-width:100%}.gw-ui .activities{grid-template-columns:1fr}.gw-ui .tool .content{padding:20px}}
+@media print{.gw-ui .app-header,.gw-ui .app-sidebar,.gw-ui .app-footer{display:none!important}.gw-ui .app-wrapper{display:block!important}.gw-ui .app-main{display:block!important;margin:0!important;padding:0!important}.gw-ui .app-main .screen{display:none!important}}
+
+.gw-ui .gw-tool-group{margin-top:36px}.gw-ui .gw-tool-group>h2{margin-bottom:18px}.gw-ui .gw-group-label{color:#b8cbbf;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:24px 16px 10px}
+
+/* Shared button states, including the PDF options dialog. */
+.gw-ui .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;cursor:pointer;line-height:1.5}
+.gw-ui .btn-outline-secondary:hover:not(:disabled){background:#edf3ef;color:#244c38;border-color:#7e9c8b}
+.gw-ui .btn:disabled{opacity:.5;cursor:not-allowed;pointer-events:auto}
+.gw-ui .btn-primary:disabled{background:#28644a;border-color:#28644a}
+.gw-ui .btn:focus-visible{outline:3px solid #be8e37;outline-offset:3px;box-shadow:none}

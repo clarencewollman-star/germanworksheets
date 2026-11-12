@@ -6,6 +6,8 @@ This folder is the maintained application. The standalone generators and Packet 
 - Generator logic: `assets/handwriting.js`, `assets/crossword.js`, `assets/wordsearch.js`, etc.
 - Shared font mapping: `assets/font-conversion.js`.
 - Shared embedded fonts: `assets/fonts.css`.
+- The Handschrift option uses `HANDSHRIFT_complete.ttf` (internal name `Handschrift_complete`, February 18, 2011), embedded under the stable CSS family `Handschrift`. Keep `assets/handschrift-metrics.js` synchronized with that font. Its word-conversion rules are separate from BW Hand Schrift.
+- UI: AdminLTE 4.10.0, bundled locally in `assets/adminlte.min.css` and `assets/adminlte.min.js`, with its license alongside them. Shared layout and overrides are `assets/app-shell.js` and `assets/app-theme.css`. Keep packet iframe settings free of duplicate navigation.
 - Shared PDF creation: `assets/pdf.js`. Preserve page dimensions and print scaling.
 - Packet Builder embeds the real generator HTML pages, with `?packet=1`; do not copy their settings or generation algorithms into the packet.
 - `assets/packet-bridge.js` connects each embedded page to the packet using postMessage. Requests must verify the sending window.

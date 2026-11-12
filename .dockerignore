@@ -6,3 +6,4 @@
 !outputs/assets/
 !outputs/assets/*.js
 !outputs/assets/*.css
+!outputs/assets/*LICENSE.txt

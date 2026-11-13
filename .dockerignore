@@ -12,3 +12,5 @@
 !outputs/assets/generated/
 !outputs/assets/generated/**
 !outputs/assets/release.json
+
+!outputs/assets/*.ttf

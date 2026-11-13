@@ -12,7 +12,7 @@ for(const name of fs.readdirSync(assets).filter(n=>/\.(js|css)$/.test(n))){
 for(const name of fs.readdirSync(root).filter(n=>n.endsWith('.html'))){
  const file=path.join(root,name),original=fs.readFileSync(file,'utf8');
  const stamped=original.replace(/((?:src|href)=")([^"?#]+)(?:\?([^"#]*))?(")/g,(match,prefix,target,query,end)=>{
-  if(target.startsWith('assets/')){
+  if(target.startsWith('assets/')&&/\.(js|css)$/.test(target)){
    const source=path.basename(target).replace(/\.[a-f0-9]{12}(?=\.(js|css)$)/,'');
    if(!files.has(source))throw new Error('Missing asset: '+target);
    return prefix+files.get(source)+end;

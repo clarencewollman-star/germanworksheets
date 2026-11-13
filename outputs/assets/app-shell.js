@@ -17,21 +17,21 @@
     {name:'Packets',items:[['packet-builder.html','Packet Builder','▣']]},
     {name:'Utilities',items:[['text-converter.html','Text converter','⇄']]}
   ];
-  const items=[['index.html','Home','⌂',''],...groups.flatMap(group=>group.items.map(item=>[...item,group.name]))];
+  const items=[['index.html','All Worksheets','⌂',''],...groups.flatMap(group=>group.items.map(item=>[...item,group.name]))];
   const current=location.pathname.split('/').pop()||'index.html';
   const title=items.find(i=>i[0]===current)?.[1]||'German Worksheets';
   document.body.classList.add('layout-fixed','sidebar-expand-lg','bg-body-tertiary');
   const wrapper=document.createElement('div');wrapper.className='app-wrapper';
   const navbar=document.createElement('nav');navbar.className='app-header navbar navbar-expand bg-body';navbar.setAttribute('aria-label','Page navigation');
-  navbar.innerHTML='<div class="container-fluid"><button class="btn gw-menu" type="button" data-lte-toggle="sidebar" aria-label="Toggle navigation" aria-controls="gw-sidebar"><span aria-hidden="true">☰</span></button><span class="gw-current"></span><a class="gw-brand-mobile" href="index.html">German Worksheets</a></div>';
+  navbar.innerHTML='<div class="container-fluid"><button class="btn gw-menu" type="button" data-lte-toggle="sidebar" aria-label="Toggle navigation" aria-controls="gw-sidebar"><span aria-hidden="true">☰</span></button><span class="gw-current"></span><a class="gw-brand-title" href="index.html">germanworksheets.com</a></div>';
   navbar.querySelector('.gw-current').textContent=title;
   const sidebar=document.createElement('aside');sidebar.id='gw-sidebar';sidebar.className='app-sidebar bg-body-secondary shadow';
-  sidebar.innerHTML='<div class="sidebar-brand"><a href="index.html" class="brand-link"><span class="brand-text fw-semibold">German Worksheets</span></a></div><div class="sidebar-wrapper"><nav aria-label="Worksheet tools"><ul class="nav sidebar-menu flex-column" role="list"></ul></nav></div>';
+  sidebar.innerHTML='<div class="sidebar-brand"></div><div class="sidebar-wrapper"><nav aria-label="Worksheet tools"><ul class="nav sidebar-menu flex-column" role="list"></ul></nav></div>';
   const list=sidebar.querySelector('ul');
   let previousGroup='';
   for(const [href,label,icon,group]of items){if(group&&group!==previousGroup){previousGroup=group;const heading=document.createElement('li');heading.className='nav-header gw-group-label';heading.textContent=group;list.append(heading)}const li=document.createElement('li');li.className='nav-item';const a=document.createElement('a');a.className='nav-link'+(href===current?' active':'');a.href=href;if(href===current)a.setAttribute('aria-current','page');const mark=document.createElement('span');mark.className='nav-icon gw-nav-icon';mark.textContent=icon;mark.setAttribute('aria-hidden','true');const text=document.createElement('p');text.textContent=label;a.append(mark,text);li.append(a);list.append(li)}
   main.classList.add('app-main');
-  const footer=document.createElement('footer');footer.className='app-footer';footer.textContent='German Worksheets';
+  const footer=document.createElement('footer');footer.className='app-footer';
   const oldVersion=document.getElementById('app-version');if(oldVersion)oldVersion.remove();
   const version=document.createElement('span');version.id='app-version';version.className='float-end';footer.append(version);
   wrapper.append(navbar,sidebar,main,footer);document.body.append(wrapper);

@@ -92,3 +92,9 @@ body.gw-ui{margin:0;background:#f4f6f9;color:#26352f;font:16px/1.5 system-ui,san
  html[data-bs-theme] .gw-ui #preview:not(:has(img)):not(:empty){color:var(--gw-text)}
  html[data-bs-theme] .gw-ui.gw-embedded{background:var(--gw-surface)!important}
 }
+
+/* Single site title centered in the top bar. */
+.gw-ui .app-header .container-fluid{position:relative;min-height:46px}
+.gw-ui .gw-brand-title{position:absolute;left:50%;transform:translateX(-50%);font-size:18px;font-weight:600;white-space:nowrap;text-decoration:none;color:var(--gw-text)}
+.gw-ui .gw-home>.gw-tool-group:first-child{margin-top:0}
+@media(max-width:600px){.gw-ui .gw-brand-title{font-size:16px}}

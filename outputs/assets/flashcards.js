@@ -19,6 +19,6 @@ function alphabetCards(mode,german){
 }
 document.getElementById('add-alphabet').addEventListener('click',()=>{
  const letters=alphabetCards(document.getElementById('alphabet-style').value,document.getElementById('german-letters').checked);
- const existing=words.value.trimEnd();words.value=(existing?existing+'\n':'')+letters.join('\n');render();
+ const existing=words.value.trimEnd();words.value=(existing?existing+'\n':'')+letters.join('\n');words.dispatchEvent(new Event('input',{bubbles:true}));render();
 });
 let timer;words.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(render,200)});style.addEventListener('change',()=>{document.getElementById('formatted-label').hidden=style.value!=='fraktur';render()});formatted.addEventListener('change',render);size.addEventListener('input',render);size.addEventListener('change',()=>{size.value=Math.max(16,Math.min(160,Math.round(Number(size.value)||64)));render()});save.addEventListener('click',()=>{clearTimeout(timer);render();if(save.disabled)return;const title=words.value.trim().split(/\s+/).slice(0,3).join(' ').replace(/[<>:"/\\|?*\x00-\x1f]/g,'').replace(/[. ]+$/g,'').slice(0,100);GermanPDF.download(makePDF(canvases),'FC '+(title||'Flashcards')+'.pdf')});Promise.all([document.fonts.load('64px Handschrift'),document.fonts.load('64px Hand'),document.fonts.load('64px Fraktur')]).then(()=>{ready=true;render()}).catch(()=>{error.textContent='Could not load the fonts. Reopen the file in your browser.'});

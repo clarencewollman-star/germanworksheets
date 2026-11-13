@@ -1,6 +1,6 @@
 
 function decodeFont(text,font){
- const mapping=(font==='Hand'||font==='Handschrift')?{'#':'','$':'','+':'s','ï':'d','Ø':'r','à':'ß','<':'sch','`':'ch','¤':'ck','µ':'tt','{':'ff','\\':'ll','~':'tz','ú':'o','Û':'s'}:{'¡':'ch','¿':'ck','|':'tz','–':'s'};
+ const mapping=(font==='Hand'||font==='Handschrift')?{'#':'','$':'','+':'s','ï':'d','Ø':'r','à':'ß','<':'sch','`':'ch','¤':'ck','µ':'tt','{':'ff','\\':'ll','~':'tz','ú':'o','Û':'s','ç':'v','é':'w','æ':'V','è':'W','í':'D','|':'F','õ':'O','ø':'Ö','Ù':'S','ó':'I'}:{'¡':'ch','¿':'ck','|':'tz','–':'s'};
  return [...text].map(c=>Object.prototype.hasOwnProperty.call(mapping,c)?mapping[c]:c).join('');
 }
 const direction=document.getElementById('direction');

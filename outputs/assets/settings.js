@@ -1,9 +1,10 @@
-/* Browser-local preferences only: never store worksheet text or generated PDFs. */
+/* Browser-local preferences and entered text; generated PDFs are not stored. */
 (() => {
  const embedded=new URLSearchParams(location.search).get('packet')==='1';
  const key='german-worksheets:settings:v1:'+location.pathname+(embedded?':packet':'');
- const controls=[...document.querySelectorAll('select[id],input[id]')].filter(el=>
-  el.tagName==='SELECT'||['number','checkbox','radio','range','color'].includes(el.type)
+ const controls=[...document.querySelectorAll('select[id],input[id],textarea[id]')].filter(el=>
+  el.tagName==='SELECT'||['number','checkbox','radio','range','color'].includes(el.type)||
+  (el.tagName==='TEXTAREA'&&!embedded&&!['encoded','output'].includes(el.id))
  ).filter(el=>!(embedded&&['orientation','verse-mode'].includes(el.id)));
  let saved={};try{const value=JSON.parse(localStorage.getItem(key)||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))saved=value}catch{}
  function restore(el){
@@ -38,7 +39,7 @@
    for(const el of restored){
     if(el.id.startsWith('preset-'))continue;
     if(el.id==='font-size'&&document.getElementById('size')?.value!=='custom')continue;
-    el.dispatchEvent(new Event('change',{bubbles:true}));
+    el.dispatchEvent(new Event(el.tagName==='TEXTAREA'?'input':'change',{bubbles:true}));
    }
   }finally{restoring=false}
  },{once:true});

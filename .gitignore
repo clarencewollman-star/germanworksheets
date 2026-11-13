@@ -4,3 +4,5 @@ outputs/*.png
 outputs/*.ttx
 .DS_Store
 Thumbs.db
+outputs/assets/generated/
+outputs/assets/release.json

@@ -1,4 +1,5 @@
 /* AdminLTE overrides shared by all tools; worksheet artwork stays unchanged. */
+html{color-scheme:light}html[data-bs-theme=dark]{color-scheme:dark}
 :root{--bs-primary:#28644a;--bs-primary-rgb:40,100,74;--lte-sidebar-width:260px}
 body.gw-ui{margin:0;background:#f4f6f9;color:#26352f;font:16px/1.5 system-ui,sans-serif}
 .gw-ui .app-main{max-width:none;width:100%;min-width:0;margin:0;padding:28px 32px}
@@ -24,3 +25,47 @@ body.gw-ui{margin:0;background:#f4f6f9;color:#26352f;font:16px/1.5 system-ui,san
 .gw-ui .btn:disabled{opacity:.5;cursor:not-allowed;pointer-events:auto}
 .gw-ui .btn-primary:disabled{background:#28644a;border-color:#28644a}
 .gw-ui .btn:focus-visible{outline:3px solid #be8e37;outline-offset:3px;box-shadow:none}
+
+.gw-update-notice{position:fixed;bottom:20px;right:20px;z-index:2100;max-width:420px;width:calc(100% - 40px);padding:20px;background:white;border:1px solid #b8c6bf;border-radius:8px;box-shadow:0 4px 24px #0003}.gw-update-notice p{margin:0 0 12px}.gw-update-notice button{margin-right:8px}
+
+/* Navigation always uses a dark surface, regardless of the device appearance. */
+.gw-ui .sidebar-menu .nav-link p{color:inherit}
+@media screen{
+ html[data-bs-theme=dark] body.gw-ui{background:#171f1c!important;color:#e7eee9}
+ [data-bs-theme=dark] .gw-ui .app-main{color:#e7eee9}
+ [data-bs-theme=dark] .gw-ui .card,
+ [data-bs-theme=dark] .gw-ui .panel,
+ [data-bs-theme=dark] .gw-ui .controls,
+ [data-bs-theme=dark] .gw-ui .tool,
+ [data-bs-theme=dark] .gw-ui .activity,
+ [data-bs-theme=dark] .gw-ui .app-header,
+ [data-bs-theme=dark] .gw-ui .app-footer,
+ [data-bs-theme=dark] .gw-ui .gw-update-notice{background:#232e28!important;color:#e7eee9;border-color:#506358}
+ [data-bs-theme=dark] .gw-ui p,
+ [data-bs-theme=dark] .gw-ui figcaption,
+ [data-bs-theme=dark] .gw-ui .status,
+ [data-bs-theme=dark] .gw-ui .app-footer{color:#bacbc0}
+ [data-bs-theme=dark] .gw-ui .sidebar-menu .nav-link p{color:inherit}
+ [data-bs-theme=dark] .gw-ui .form-control,
+ [data-bs-theme=dark] .gw-ui .form-select,
+ [data-bs-theme=dark] .gw-ui textarea,
+ [data-bs-theme=dark] .gw-ui select,
+ [data-bs-theme=dark] .gw-ui input:not([type=checkbox]):not([type=radio]){background-color:#18231d;color:#edf4ef;border-color:#6b8073}
+ [data-bs-theme=dark] .gw-ui ::placeholder{color:#a6b9ad;opacity:1}
+ [data-bs-theme=dark] .gw-ui .btn-outline-secondary{background:#29392f;color:#e2eee6;border-color:#82998b}
+ [data-bs-theme=dark] .gw-ui .btn-outline-secondary:hover:not(:disabled){background:#3b5243;color:white;border-color:#a7bcae}
+ [data-bs-theme=dark] .gw-ui .gw-menu,
+ [data-bs-theme=dark] .gw-ui .gw-brand-mobile,
+ [data-bs-theme=dark] .gw-ui main a:not(.tool):not(.btn){color:#a0dbb7}
+ [data-bs-theme=dark] .gw-ui td,
+ [data-bs-theme=dark] .gw-ui th,
+ [data-bs-theme=dark] .gw-ui .settings{border-color:#506358}
+ [data-bs-theme=dark] .gw-ui #message{color:#ecd297}
+ [data-bs-theme=dark] .gw-ui #error,
+ [data-bs-theme=dark] .gw-ui #warning{color:#ffb6ae}
+ [data-bs-theme=dark] .gw-ui #pdf-ready-dialog{background:#232e28!important;color:#edf4ef!important;border-color:#6b8073!important}
+ .gw-ui #pdf-ready-dialog::backdrop{background:#0008}
+ /* These are paper previews, not application panels. */
+ .gw-ui canvas,.gw-ui .page,.gw-ui #preview img{color-scheme:light;background:white}
+ [data-bs-theme=dark] .gw-ui #preview:not(:has(img)):not(:empty){color:#e7eee9}
+}

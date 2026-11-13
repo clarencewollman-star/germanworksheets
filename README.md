@@ -35,6 +35,8 @@ docker compose up -d --no-build
 
 ## Update the website
 
+After editing JS/CSS or changing the version, run `node scripts/stamp-version.cjs` to refresh local previews. Maintain only the source files in `outputs/assets/`; `assets/generated/` is generated and ignored by Git. Docker builds regenerate these files automatically. HTML must revalidate on refresh, hashed assets may be cached for a year, and open pages check for a new release every five minutes or when brought back into view. Reloading is always the user's choice.
+
 Edit the existing files in `outputs/`, then commit and push to `main`. The Docker workflow checks JavaScript, builds the image, verifies every served HTML/JS/CSS file, and publishes `latest` and a commit-specific tag to GitHub Container Registry. A server needs to pull and restart to use a new image.
 
 The site can also be opened locally using `outputs/index.html`. No server stores worksheet text; generation happens in the browser.

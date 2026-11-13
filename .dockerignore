@@ -1,9 +1,14 @@
 **
 !Dockerfile
 !nginx.conf
+!scripts/
+!scripts/stamp-version.cjs
 !outputs/
 !outputs/*.html
 !outputs/assets/
 !outputs/assets/*.js
 !outputs/assets/*.css
 !outputs/assets/*LICENSE.txt
+!outputs/assets/generated/
+!outputs/assets/generated/**
+!outputs/assets/release.json

@@ -13,5 +13,6 @@ This folder is the maintained application. The standalone generators and Packet 
 - `assets/packet-bridge.js` connects each embedded page to the packet using postMessage. Requests must verify the sending window.
 - Crossword and word-search `GermanGenerator.exportPages` use each tool's actual `create()` and return student/answer pages separately and answer choices indexed by nonblank source line.
 - Keep all files in this folder together when moving the application.
+- Edit assets directly in `assets/`, never `assets/generated/`. Run `node scripts/stamp-version.cjs` from the project root after changing any JS/CSS or version so local HTML references fresh content hashes. Generated files are ignored in Git and regenerated during Docker builds.
 
 The Python/PowerShell builders and templates in `../work/` are historical scratch files. Do not run them to rebuild the application: they predate this shared architecture and can overwrite current changes. Edit the canonical files here directly.

@@ -9,13 +9,6 @@ const pictures=document.getElementById('pictures');
 const reveal=document.getElementById('reveal');
 const next=document.getElementById('next');
 const review=document.getElementById('review');
-const readerCards={
- au:['au','Au'],aeu:['äu','Äu'],'ch-initial':['ch','Ch'],ei:['ei','Ei'],eu:['eu','Eu'],
- pf:['pf','Pf'],ph:['ph','Ph'],qu:['qu','Qu'],sch:['sch','Sch'],sp:['sp','Sp'],
- st:['st','St'],tsch:['tsch','Tsch'],ae:['ä','Ä'],oe:['ö','Ö'],ue:['ü','Ü'],
- ai:['ai'],'ch-book':['ch'],chs:['chs'],ck:['ck'],ie:['ie'],ng:['ng'],nk:['nk'],
- 'st-final':['_st'],eszett:['ß'],tz:['tz']
-};
 let keys=[];
 let revealed=false;
 let letters=[];
@@ -64,7 +57,12 @@ function showLetter(){
   const encode=encoders[family];
   const glyph=document.createElement('span');
   glyph.style.fontFamily=family+', sans-serif';
-  glyph.textContent=encode?encode(letter):letter;
+  if(letter==='_st'){
+   const label=document.createElement('span');
+   label.className='final-st';
+   label.textContent=encode?encode('st'):'st';
+   glyph.appendChild(label);
+  }else glyph.textContent=encode?encode(letter):letter;
   return glyph;
  }));
  updatePictures();

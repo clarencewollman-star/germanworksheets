@@ -12,7 +12,7 @@
   if(embedded){document.body.classList.add('gw-embedded');return}
   const groups=[
     {name:'Writing',items:[['handwriting-worksheet-generator.html','Handwriting','Aa']]},
-    {name:'Reading & Vocabulary',items:[['flashcard-generator.html','Flashcards','▤'],['reading-practice-generator.html','Sound blending','Ab']]},
+    {name:'Reading & Vocabulary',items:[['flashcard-generator.html','Flashcards','▤'],['reading-practice-generator.html','Sound blending','Ab'],['letter-find.html','Letter recognition','Aa']]},
     {name:'Puzzles',items:[['crossword-generator.html','Crossword','▦'],['wordsearch-generator.html','Word search','⌕']]},
     {name:'Packets',items:[['packet-builder.html','Packet Builder','▣']]},
     {name:'Utilities',items:[['text-converter.html','Text converter','⇄'],['letter-projector.html','Letter projector','Aa']]}

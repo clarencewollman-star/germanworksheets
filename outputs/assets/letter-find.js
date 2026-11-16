@@ -122,16 +122,17 @@
     if (count > 1 && left.every((ch,i)=>ch===right[i])) right.push(right.shift());
     return {left,right,leftFont:pick(families),rightFont:pick(families)};
   }
-  function drawConnections(c,set,top,key) {
-    const y = i => top + (i+.5)*220/set.left.length;
+  function drawConnections(c,set,left,top,width,height,key) {
+    const leftDot=left+64, rightDot=left+width-64;
+    const y = i => top + (i+.5)*height/set.left.length;
     set.left.forEach((ch,i)=>{
-      glyph(c,upper(ch),set.leftFont,155,y(i),34);
-      glyph(c,set.right[i],set.rightFont,457,y(i),34);
-      for(const x of [188,424]){
+      glyph(c,upper(ch),set.leftFont,left+32,y(i),34);
+      glyph(c,set.right[i],set.rightFont,left+width-32,y(i),34);
+      for(const x of [leftDot,rightDot]){
         c.beginPath();c.arc(x,y(i),2,0,2*Math.PI);c.fill();
       }
       if(key){
-        c.beginPath();c.moveTo(188,y(i));c.lineTo(424,y(set.right.indexOf(ch)));c.stroke();
+        c.beginPath();c.moveTo(leftDot,y(i));c.lineTo(rightDot,y(set.right.indexOf(ch)));c.stroke();
       }
     });
   }
@@ -163,11 +164,14 @@
     c.strokeStyle = '#67766d';
     c.lineWidth = 0.8;
     c.beginPath();
-    const setHeight = (model.activity === 'missing' ? 570 : 660) / model.rows.length;
-    const gridTop = model.activity === 'missing' ? top+90 : top;
-    c.rect(left, gridTop, right-left, setHeight*model.rows.length);
-    for (let i=1; i<model.rows.length; i++) {
-      const y = gridTop+i*setHeight;
+    const columns=model.activity==='connect'?2:1;
+    const rowCount=Math.ceil(model.rows.length/columns);
+    const setHeight=660/rowCount, cellWidth=(right-left)/columns;
+
+    c.rect(left, top, right-left, 660);
+    if(columns===2){c.moveTo(left+cellWidth,top);c.lineTo(left+cellWidth,top+660)}
+    for (let i=1; i<rowCount; i++) {
+      const y = top+i*setHeight;
       c.moveTo(left,y);
       c.lineTo(right,y);
     }
@@ -175,17 +179,9 @@
     c.restore();
     c.fillStyle='#17251d';c.strokeStyle='#28352d';
     c.font='12px Arial';c.fillText('Name',400,66);c.fillRect(439,66,125,.7);
-    if(model.activity==='missing'){
-      c.font='12px Arial';c.fillText('Alphabet',left,top+16);
-      [...abc].forEach((ch,i)=>{
-        const x=left+20+(i%13)*39;
-        const y=top+34+Math.floor(i/13)*30;
-        glyph(c,model.upperStrip?upper(ch):ch,model.stripFont,x,y,21);
-      });
-    }
     model.rows.forEach((r,i)=>{
-      const y=gridTop+i*setHeight;
-      if(model.activity==='connect') drawConnections(c,r,y,key);
+      const y=top+Math.floor(i/columns)*setHeight;
+      if(model.activity==='connect') drawConnections(c,r,left+(i%columns)*cellWidth,y,cellWidth,setHeight,key);
       else if(model.activity==='missing') drawSequence(c,r,y,key);
       else drawRow(c,r,y,key);
     });
@@ -239,8 +235,8 @@
     }
     if(activity==='connect' && new Set(targets).size<2){el('status').textContent='Enter at least two different letters to connect.';return}
     models=Array.from({length:count},()=>{
-      if(activity==='connect') return {activity,rows:Array.from({length:3},()=>connectSet(nextLetter,targets,availableFonts))};
-      if(activity==='missing') return {activity,stripFont:pick(availableFonts),upperStrip:casing==='Uppercase',rows:Array.from({length:6},()=>missingSet(nextLetter(),casing,availableFonts,Number(el('blank-count').value)))};
+      if(activity==='connect') return {activity,rows:Array.from({length:6},()=>connectSet(nextLetter,targets,availableFonts))};
+      if(activity==='missing') return {activity,rows:Array.from({length:6},()=>missingSet(nextLetter(),casing,availableFonts,Number(el('blank-count').value)))};
       return {activity,rows:Array.from({length:activity==='color'?3:6},()=>row(nextLetter(),casing,searchCase,pool,availableFonts,activity,targets,el('target-font').value))
       };
     });

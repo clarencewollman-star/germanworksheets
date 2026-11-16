@@ -2,7 +2,12 @@
 (() => {
  if(window.parent===window||new URLSearchParams(location.search).get('packet')!=='1')return;
  const kind=document.body.dataset.generator,api=window.GermanGenerator;
- const verseControl=document.getElementById('verse-mode');if(verseControl)verseControl.value='separate';
+ const verseControl=document.getElementById('verse-mode');function setGrouping(mode){
+   if(verseControl && mode && verseControl.value!==mode){
+     verseControl.value=mode;
+     verseControl.dispatchEvent(new Event('change',{bubbles:true}));
+   }
+ }
  const send=data=>parent.postMessage({channel:'german-worksheets',kind,...data},'*');
  const css=document.createElement('style');css.textContent=`body{background:white}main{margin:0!important;padding:10px!important;max-width:none!important}main>a,header,h1,#pages,#source,label[for=source],#song,label[for=song],#generate,#download,#print,#orientation,label[for=orientation],#verse-mode,label[for=verse-mode]{display:none!important}.controls,.panel{margin:0!important;padding:8px!important;border:0!important;box-shadow:none!important}#review select{max-width:100%}`;document.head.append(css);
  function resize(){const el=document.querySelector('main')||document.body;send({type:'height',height:Math.ceil(el.getBoundingClientRect().height)+22})}
@@ -13,7 +18,8 @@
   const {id,method,payload}=event.data;
   try{let value;
    if(method==='text'){api.setText(String(payload||''));value=true}
-   else if(method==='export'){value=await api.exportPages(payload?.choices,payload?.orientation,true)}
+   else if(method==='grouping'){setGrouping(payload);value=true}
+   else if(method==='export'){setGrouping(payload?.verseMode);value=await api.exportPages(payload?.choices,payload?.orientation,true,payload?.groupSize)}
    else throw new Error('Unknown packet operation.');
    send({type:'response',id,value});resize();
   }catch(e){send({type:'response',id,error:e.message||String(e)})}

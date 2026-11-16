@@ -136,18 +136,21 @@
     });
   }
   const abc = 'abcdefghijklmnopqrstuvwxyz';
-  function missingSet(letter,casing,families) {
+  function missingSet(letter,casing,families,count) {
     const index = abc.indexOf(letter);
     const start = Math.max(0,Math.min(abc.length-5,index-Math.floor(Math.random()*5)));
     const capitals = casing==='Uppercase' || (casing==='Mixed' && Math.random()<.5);
     const sequence = abc.slice(start,start+5);
-    return {sequence:capitals?sequence.toUpperCase():sequence, gap:index-start,font:pick(families)};
+    const targetGap = index - start;
+    const remaining = shuffle([0,1,2,3,4].filter(position => position !== targetGap));
+    const gaps = [targetGap, ...remaining.slice(0,count-1)];
+    return {sequence:capitals?sequence.toUpperCase():sequence, gaps, font:pick(families)};
   }
   function drawSequence(c,set,top,key) {
     [...set.sequence].forEach((ch,i)=>{
       const x=100+i*103;
-      if(i!==set.gap || key) glyph(c,ch,set.font,x,top+47,34);
-      if(i===set.gap)c.fillRect(x-28,top+70,56,1);
+      if(!set.gaps.includes(i) || key) glyph(c,ch,set.font,x,top+47,34);
+      if(set.gaps.includes(i))c.fillRect(x-28,top+70,56,1);
     });
   }
   function render(model,index,key,scale) {
@@ -203,6 +206,7 @@
     const activity=el('activity').value;
     el('letter-case').parentElement.hidden=activity==='connect';
     el('search-case').parentElement.hidden=['connect','missing'].includes(activity);
+    el('blank-count-field').hidden = activity !== 'missing';
     el('target-font-field').hidden = el('activity').value !== 'letters';
     models=[];el('save').disabled=true;el('pages').replaceChildren();el('status').textContent='';
     el('focus').placeholder=el('activity').value==='groups'?'ei, ie, sch':'m, n, u, ü';
@@ -236,13 +240,13 @@
     if(activity==='connect' && new Set(targets).size<2){el('status').textContent='Enter at least two different letters to connect.';return}
     models=Array.from({length:count},()=>{
       if(activity==='connect') return {activity,rows:Array.from({length:3},()=>connectSet(nextLetter,targets,availableFonts))};
-      if(activity==='missing') return {activity,stripFont:pick(availableFonts),upperStrip:casing==='Uppercase',rows:Array.from({length:6},()=>missingSet(nextLetter(),casing,availableFonts))};
+      if(activity==='missing') return {activity,stripFont:pick(availableFonts),upperStrip:casing==='Uppercase',rows:Array.from({length:6},()=>missingSet(nextLetter(),casing,availableFonts,Number(el('blank-count').value)))};
       return {activity,rows:Array.from({length:activity==='color'?3:6},()=>row(nextLetter(),casing,searchCase,pool,availableFonts,activity,targets,el('target-font').value))
       };
     });
     preview();el('save').disabled=false;
   }
-  for(const id of ['activity','letter-order','font-style','target-font','letter-case','search-case','count','focus']){
+  for(const id of ['activity','blank-count','letter-order','font-style','target-font','letter-case','search-case','count','focus']){
     el(id).addEventListener('input',invalidate);
     el(id).addEventListener('change',invalidate);
   }

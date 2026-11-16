@@ -56,4 +56,11 @@ async function exportHandwritingPages(){
 }
 async function downloadWorksheetPDF(){printButton.disabled=true;printButton.textContent='Creating PDF…';try{const result=await exportHandwritingPages();const title=source.value.trim().split(/\s+/).slice(0,3).join(' ').replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,100);GermanPDF.download(GermanPDF.fromPages(result),'HW '+(title||'Worksheet')+'.pdf')}catch(e){warning.textContent=e.message}finally{printButton.textContent='Print / Save PDF';render()}}
 
-window.GermanGenerator={setText(text){if(source.value!==text){source.value=text;source.dispatchEvent(new Event("input",{bubbles:true}))}},async exportPages(shared,layout,groupVerses=false){const previous=orientation.value,originalText=source.value,originalEncoded=encoded.value;try{if(layout)orientation.value=layout;if(!groupVerses)return {pages:await exportHandwritingPages()};const verses=originalText.trim().split(/\r?\n[ \t]*\r?\n(?:[ \t]*\r?\n)*/).filter(v=>v.trim()),result=[];for(let v=0;v<verses.length;v++){source.value=verses[v];encoded.value=handwritingConvert(verses[v]);result.push(...(await exportHandwritingPages()).map(p=>({...p,verse:v+1})))}return {pages:result}}finally{source.value=originalText;encoded.value=originalEncoded;orientation.value=previous;render()}}};
+window.GermanGenerator={setText(text){if(source.value!==text){source.value=text;source.dispatchEvent(new Event("input",{bubbles:true}))}},async exportPages(shared,layout,groupVerses=false,groupSize=1){const previous=orientation.value,originalText=source.value,originalEncoded=encoded.value;try{if(layout)orientation.value=layout;if(!groupVerses)return {pages:await exportHandwritingPages()};const verses=originalText.trim().split(/\r?\n[ \t]*\r?\n(?:[ \t]*\r?\n)*/).filter(v=>v.trim()),result=[];const size=Number.isInteger(groupSize)&&groupSize>0?groupSize:1;
+ for(let start=0;start<verses.length;start+=size){
+   source.value=verses.slice(start,start+size).join('\n\n');
+   encoded.value=handwritingConvert(source.value);
+   const pages=await exportHandwritingPages();
+   result.push(...pages.map(page=>({...page,verse:start+1})));
+ }
+ return {pages:result}}finally{source.value=originalText;encoded.value=originalEncoded;orientation.value=previous;render()}}};

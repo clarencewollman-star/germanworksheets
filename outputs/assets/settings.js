@@ -26,7 +26,8 @@
  let restoring=false;
  function save(event){
   const el=event.target;if(restoring||!controls.includes(el))return;
-  if(el.type==='number'&&(!el.value||!el.checkValidity()))return;
+  if(el.id==='print-size' && event.type==='input' && !(el.valueAsNumber>=8 && el.valueAsNumber<=96))return;
+  if(el.type==='number'&&(!el.value||!el.validity.valid))return;
   saved[el.id]=(el.type==='checkbox'||el.type==='radio')?el.checked:el.value;
   // These controls update one another; retain their resulting state together.
   if(['size','font-size','preset-small','preset-medium','preset-large'].includes(el.id)){

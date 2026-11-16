@@ -18,8 +18,7 @@ const sizeField=layoutControl('print-size');
 const pdfName='German text.pdf';
 let shareFile=null, shareTimer;
 try{
- const mobile=/iPhone|iPod|iPad|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
- canSharePDF=mobile && !!navigator.share && !!navigator.canShare?.({files:[new File([],pdfName,{type:'application/pdf'})]});
+ canSharePDF=GermanPDF.canShareFile(new File([],pdfName,{type:'application/pdf'}));
 }catch{canSharePDF=false}
 function makePreviewPDF(){
  return GermanPDF.fromSVG([...preview.children],pageWidth,pageHeight).then(pages=>GermanPDF.fromPages(pages));
@@ -121,14 +120,7 @@ sizeField.addEventListener('change',()=>{
 });
 printPages.addEventListener('click',async()=>{
  try{
-  const file=shareFile;
-  if(file){
-   try{await navigator.share({files:[file]})}
-   catch(error){if(error.name!=='AbortError')GermanPDF.save(file,pdfName)}
-   return;
-  }
-  const blob=await makePreviewPDF();
-  GermanPDF.save(blob,pdfName);
+  await GermanPDF.download(shareFile||await makePreviewPDF(),pdfName);
  }catch(error){status.textContent='Could not create the PDF. '+error.message}
 });
 updatePreview();

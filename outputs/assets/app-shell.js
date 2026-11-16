@@ -15,7 +15,7 @@
     {name:'Reading & Vocabulary',items:[['flashcard-generator.html','Flashcards','▤'],['reading-practice-generator.html','Sound blending','Ab']]},
     {name:'Puzzles',items:[['crossword-generator.html','Crossword','▦'],['wordsearch-generator.html','Word search','⌕']]},
     {name:'Packets',items:[['packet-builder.html','Packet Builder','▣']]},
-    {name:'Utilities',items:[['text-converter.html','Text converter','⇄']]}
+    {name:'Utilities',items:[['text-converter.html','Text converter','⇄'],['letter-projector.html','Letter projector','Aa']]}
   ];
   const items=[['index.html','All Worksheets','⌂',''],...groups.flatMap(group=>group.items.map(item=>[...item,group.name]))];
   const current=location.pathname.split('/').pop()||'index.html';

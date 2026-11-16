@@ -19,25 +19,19 @@ window.GermanPDF={
   const xref=length;add('xref\n0 '+offsets.length+'\n0000000000 65535 f \n');for(let i=1;i<offsets.length;i++)add(String(offsets[i]).padStart(10,'0')+' 00000 n \n');
   add('trailer\n<< /Size '+offsets.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF');return new Blob(parts,{type:'application/pdf'});
  },
- download(blob,name){
-  const file=typeof File==='function'?new File([blob],name,{type:'application/pdf'}):null;
-  let shareable=false;try{shareable=!!(file&&navigator.share&&navigator.canShare?.({files:[file]}))}catch{}
-  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  document.getElementById('pdf-ready-dialog')?.close();
-  const dialog=document.createElement('dialog');dialog.id='pdf-ready-dialog';
-  dialog.style.cssText='width:calc(100% - 32px);max-width:420px;max-height:85vh;overflow:auto;box-sizing:border-box;border:1px solid #a9b9ad;border-radius:14px;padding:24px;background:white;color:#23342c;font:16px/1.5 system-ui';
-  const heading=document.createElement('h2');heading.id='pdf-ready-title';heading.textContent='Print or save your PDF';heading.style.margin='0 0 12px';dialog.setAttribute('aria-labelledby',heading.id);
-  const filename=document.createElement('p');filename.textContent=name;filename.style.overflowWrap='anywhere';
-  const help=document.createElement('p');help.style.whiteSpace='pre-line';help.textContent=shareable?'1. Tap Share PDF below.\n2. Scroll down in the share menu and choose Print.\nOr choose Save to Files to keep a copy.':ios?'1. Tap Open PDF below.\n2. Tap Safari’s Share icon (square with an up arrow).\n3. Scroll down and choose Print.\nIf Print is missing, choose Save to Files, then open that file and use Share → Print.':'Open the PDF to print it, or choose Save PDF to download a copy.';
-  const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap';
-  const message=document.createElement('p');message.setAttribute('role','status');
-  const button=(label,action)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className='btn btn-outline-secondary';b.addEventListener('click',action);actions.append(b);return b};
-  // A fresh tap after generation gives iOS the user activation required for file sharing.
-  if(shareable){const share=button('Share PDF',async()=>{share.disabled=true;message.textContent='';try{await navigator.share({files:[file]})}catch(e){if(e.name!=='AbortError')message.textContent='Safari could not share this PDF. Tap Open PDF, then use the browser’s Share menu, or save it to Files.'}finally{share.disabled=false}});share.className='btn btn-primary'}else if(ios){const unavailable=button('Share PDF — unavailable',()=>{});unavailable.disabled=true;const reason=document.createElement('p');reason.textContent=window.isSecureContext===false?'Direct sharing needs an HTTPS connection. Use Open PDF below for now.':'Safari is not allowing this page to share PDF files. Use Open PDF below and Safari’s own Share menu.';help.textContent+='\n\n'+reason.textContent}
-  const url=URL.createObjectURL(blob),open=document.createElement('a');open.href=url;open.target='_blank';open.rel='noopener';open.textContent='Open PDF';open.className=shareable?'btn btn-outline-secondary':'btn btn-primary';actions.append(open);
-  button('Save PDF',()=>this.save(blob,name));button('Done',()=>dialog.close());
-  dialog.append(heading,filename,help,actions,message);document.body.append(dialog);
-  dialog.addEventListener('close',()=>{dialog.remove();setTimeout(()=>URL.revokeObjectURL(url),300000)},{once:true});dialog.showModal();
+ canShareFile(file){
+  const mobile=/iPhone|iPod|iPad|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  try{return mobile && !!navigator.share && !!navigator.canShare?.({files:[file]})}catch{return false}
+ },
+ async download(blob,name){
+  if(typeof File==='function'){
+   const file=blob instanceof File?blob:new File([blob],name,{type:'application/pdf'});
+   if(this.canShareFile(file)){
+    try{await navigator.share({files:[file]});return}
+    catch(error){if(error.name==='AbortError')return}
+   }
+  }
+  this.save(blob,name);
  },
  save(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),300000)},
  async fromSVG(svgs,width,height){

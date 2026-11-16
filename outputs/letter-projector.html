@@ -2,16 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="assets/generated/theme.83c90c9eba70.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <title>Letter Projector (Still in testing) · German Worksheets</title>
 <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
 <link rel="stylesheet" href="assets/generated/fonts.66af5ca7de04.css">
 <style>
-body{padding:clamp(1rem,4vw,3rem);background:#f7faf8;color:#182921}
-main{max-width:72rem;margin:auto}
+
+
 h1{font-size:2rem}
-.controls{display:flex;gap:1rem;align-items:end;flex-wrap:wrap;margin:1rem 0}
+.controls{display:flex;flex-direction:row;gap:1rem;align-items:end;flex-wrap:wrap;margin:1rem 0}
 label{font-weight:600}
 #stage{display:grid;place-items:center;width:100%;height:62vh;background:white;color:#15271d;border:1px solid #bdcdc4;border-radius:.5rem;font-size:min(35vw,36vh);line-height:1}
 #stage{appearance:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation;contain:paint}
@@ -28,6 +29,7 @@ label{font-weight:600}
 #projection:fullscreen #stage.sounds{font-size:min(23vw,52vh)}#projection:fullscreen #stage.sounds.multiple{font-size:min(12vw,29vh)}
 #exit-full{display:none}#projection:fullscreen #exit-full{display:block;position:absolute;top:.5rem;right:.5rem;z-index:1}
 </style>
+<link rel="stylesheet" href="assets/generated/app-theme.9f5d291641be.css">
 </head>
 <body><main>
 <a href="index.html">← All Worksheets</a>
@@ -39,7 +41,7 @@ label{font-weight:600}
 <label>Letters per page<select class="form-select" id="letter-count"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
 <label><input type="checkbox" id="pictures"> Show pictures</label>
 <label id="reveal-option" hidden><input type="checkbox" id="reveal"> Reveal pictures on next click</label>
-<button class="btn btn-success" id="next">Next page</button>
+<button class="primary" id="next">Next page</button>
 <button class="btn btn-outline-secondary" id="full">Full screen</button>
 </div>
 <div id="projection"><button type="button" id="exit-full" class="btn btn-light">Exit full screen</button>
@@ -50,4 +52,8 @@ label{font-weight:600}
 <script src="assets/generated/handschrift-metrics.290155e0940e.js"></script>
 <script src="assets/generated/font-conversion.2e03f68842de.js"></script>
 <script src="assets/generated/letter-projector.c6b2f31a19cc.js"></script>
+<script src="assets/generated/app-shell.0f96145273d2.js"></script>
+<script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
+<script src="assets/generated/version.849c87902a6b.js"></script>
+<script src="assets/generated/update-check.3c11939acad8.js"></script>
 </body></html>

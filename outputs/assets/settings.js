@@ -7,6 +7,11 @@
   (el.tagName==='TEXTAREA'&&!embedded&&!['encoded','output'].includes(el.id))
  ).filter(el=>!(embedded&&['orientation','verse-mode'].includes(el.id)));
  let saved={};try{const value=JSON.parse(localStorage.getItem(key)||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))saved=value}catch{}
+ if(document.getElementById('font-style') && !document.getElementById('script-font') && saved['script-font']){
+  if(saved['font-style']==='script' && ['Hand','Handschrift'].includes(saved['script-font'])) saved['font-style']=saved['script-font'];
+  delete saved['script-font'];
+  try{localStorage.setItem(key,JSON.stringify(saved))}catch{}
+ }
  function restore(el){
   const value=saved[el.id];if(value===undefined)return false;
   if(el.type==='checkbox'||el.type==='radio'){if(typeof value!=='boolean')return false;el.checked=value;return true}

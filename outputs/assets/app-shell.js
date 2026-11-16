@@ -19,7 +19,7 @@
   ];
   const items=[['index.html','All Worksheets','⌂',''],...groups.flatMap(group=>group.items.map(item=>[...item,group.name]))];
   const current=location.pathname.split('/').pop()||'index.html';
-  const title=items.find(i=>i[0]===current)?.[1]||'German Worksheets';
+  const title=items.find(i=>i[0]===current)?.[1]||main.querySelector('h1')?.textContent||'German Worksheets';
   document.body.classList.add('layout-fixed','sidebar-expand-lg','bg-body-tertiary');
   const wrapper=document.createElement('div');wrapper.className='app-wrapper';
   const navbar=document.createElement('nav');navbar.className='app-header navbar navbar-expand bg-body';navbar.setAttribute('aria-label','Page navigation');

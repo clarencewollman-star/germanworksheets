@@ -7,7 +7,7 @@
   for(const el of main.querySelectorAll('select'))el.classList.add('form-select');
   for(const el of main.querySelectorAll('textarea,input:not([type=checkbox]):not([type=radio])'))el.classList.add('form-control');
   for(const el of main.querySelectorAll('input[type=checkbox],input[type=radio]'))el.classList.add('form-check-input');
-  for(const el of main.querySelectorAll('button'))el.classList.add('btn',el.classList.contains('primary')?'btn-primary':'btn-outline-secondary');
+  for(const el of main.querySelectorAll('button:not([data-projector-stage])'))el.classList.add('btn',el.classList.contains('primary')?'btn-primary':'btn-outline-secondary');
   for(const el of main.querySelectorAll('.panel,.controls'))el.classList.add('card');
   if(embedded){document.body.classList.add('gw-embedded');return}
   const groups=[

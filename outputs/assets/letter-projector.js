@@ -46,7 +46,7 @@ function updatePictures(){
    image=document.createElement('img');
    image.alt='';
    image.draggable=false;
-   image.src=review.value==='sounds'?'assets/doppellaute-reader/'+keys[index]+'.jpg':'assets/alphabet-reader/'+keys[index]+'.png';
+   image.src=review.value==='sounds'?'assets/doppellaute-reader/'+keys[index]+'.jpg?v=2':'assets/alphabet-reader/'+keys[index]+'.png';
    glyph.appendChild(image);
   }
   image.style.visibility=awaitingReveal()?'hidden':'visible';
@@ -124,9 +124,11 @@ document.addEventListener('keydown',event=>{
  event.preventDefault();
  if(!event.repeat)advance();
 });
-full.hidden=!stage.requestFullscreen;
+const projection=document.getElementById('projection');
+full.hidden=!projection.requestFullscreen;
+document.getElementById('exit-full').addEventListener('click',()=>document.exitFullscreen());
 full.addEventListener('click',async()=>{
- try{await stage.requestFullscreen();stage.focus()}
+ try{await projection.requestFullscreen();stage.focus()}
  catch{stage.focus()}
 });
 nextLetter();

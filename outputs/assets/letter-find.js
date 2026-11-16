@@ -109,9 +109,46 @@
   }
   function drawMark(ctx,x,y,mark){
     ctx.beginPath();
-    if(mark===1){ctx.moveTo(x-18,y+17);ctx.lineTo(x+18,y+17)}
+    if(mark===1) ctx.rect(x-22,y-22,44,44);
     else ctx.ellipse(x,y,25,23,0,0,2*Math.PI);
     ctx.stroke();
+  }
+  function connectSet(next, targets, families) {
+    const letters = new Set();
+    const count = Math.min(5, new Set(targets).size);
+    while (letters.size < count) letters.add(next());
+    const left = [...letters];
+    const right = shuffle(left);
+    if (count > 1 && left.every((ch,i)=>ch===right[i])) right.push(right.shift());
+    return {left,right,leftFont:pick(families),rightFont:pick(families)};
+  }
+  function drawConnections(c,set,top,key) {
+    const y = i => top + (i+.5)*220/set.left.length;
+    set.left.forEach((ch,i)=>{
+      glyph(c,upper(ch),set.leftFont,155,y(i),34);
+      glyph(c,set.right[i],set.rightFont,457,y(i),34);
+      for(const x of [188,424]){
+        c.beginPath();c.arc(x,y(i),2,0,2*Math.PI);c.fill();
+      }
+      if(key){
+        c.beginPath();c.moveTo(188,y(i));c.lineTo(424,y(set.right.indexOf(ch)));c.stroke();
+      }
+    });
+  }
+  const abc = 'abcdefghijklmnopqrstuvwxyz';
+  function missingSet(letter,casing,families) {
+    const index = abc.indexOf(letter);
+    const start = Math.max(0,Math.min(abc.length-5,index-Math.floor(Math.random()*5)));
+    const capitals = casing==='Uppercase' || (casing==='Mixed' && Math.random()<.5);
+    const sequence = abc.slice(start,start+5);
+    return {sequence:capitals?sequence.toUpperCase():sequence, gap:index-start,font:pick(families)};
+  }
+  function drawSequence(c,set,top,key) {
+    [...set.sequence].forEach((ch,i)=>{
+      const x=100+i*103;
+      if(i!==set.gap || key) glyph(c,ch,set.font,x,top+47,34);
+      if(i===set.gap)c.fillRect(x-28,top+70,56,1);
+    });
   }
   function render(model,index,key,scale) {
     const canvas=document.createElement('canvas');
@@ -123,10 +160,11 @@
     c.strokeStyle = '#67766d';
     c.lineWidth = 0.8;
     c.beginPath();
-    const setHeight = blockHeight * (model.rows[0].choices.length / 16);
-    c.rect(left, top, right-left, setHeight*model.rows.length);
+    const setHeight = (model.activity === 'missing' ? 570 : 660) / model.rows.length;
+    const gridTop = model.activity === 'missing' ? top+90 : top;
+    c.rect(left, gridTop, right-left, setHeight*model.rows.length);
     for (let i=1; i<model.rows.length; i++) {
-      const y = top+i*setHeight;
+      const y = gridTop+i*setHeight;
       c.moveTo(left,y);
       c.lineTo(right,y);
     }
@@ -134,7 +172,20 @@
     c.restore();
     c.fillStyle='#17251d';c.strokeStyle='#28352d';
     c.font='12px Arial';c.fillText('Name',400,66);c.fillRect(439,66,125,.7);
-    model.rows.forEach((row,i)=>drawRow(c,row,top+i*setHeight,key));
+    if(model.activity==='missing'){
+      c.font='12px Arial';c.fillText('Alphabet',left,top+16);
+      [...abc].forEach((ch,i)=>{
+        const x=left+20+(i%13)*39;
+        const y=top+34+Math.floor(i/13)*30;
+        glyph(c,model.upperStrip?upper(ch):ch,model.stripFont,x,y,21);
+      });
+    }
+    model.rows.forEach((r,i)=>{
+      const y=gridTop+i*setHeight;
+      if(model.activity==='connect') drawConnections(c,r,y,key);
+      else if(model.activity==='missing') drawSequence(c,r,y,key);
+      else drawRow(c,r,y,key);
+    });
     c.textAlign='right';c.fillStyle='#465449';c.font='10px Arial';
     c.fillText((key?'Lösung · ':'')+'Seite '+(index+1),564,749);
     return canvas;
@@ -149,6 +200,9 @@
     });
   }
   function invalidate(){
+    const activity=el('activity').value;
+    el('letter-case').parentElement.hidden=activity==='connect';
+    el('search-case').parentElement.hidden=['connect','missing'].includes(activity);
     el('target-font-field').hidden = el('activity').value !== 'letters';
     models=[];el('save').disabled=true;el('pages').replaceChildren();el('status').textContent='';
     el('focus').placeholder=el('activity').value==='groups'?'ei, ie, sch':'m, n, u, ü';
@@ -163,14 +217,14 @@
       fraktur:['Fraktur'], script:['Hand','Handschrift'], mixed:['Hand','Handschrift','Fraktur']};
     const availableFonts = styles[el('font-style').value];
     const activity=el('activity').value;
-    const pool=activity==='groups'?groups:alphabet.filter(ch=>ch!=='ß'||(casing==='Lowercase'&&searchCase==='same'));
+    const pool=activity==='missing'?[...abc]:activity==='connect'?alphabet.filter(ch=>ch!=='ß'):activity==='groups'?groups:alphabet.filter(ch=>ch!=='ß'||(casing==='Lowercase'&&searchCase==='same'));
     const raw=el('focus').value.normalize('NFC').toLowerCase().trim();
     const custom = activity==='groups' ? raw.split(/[\s,;]+/).filter(Boolean) : [...raw.replace(/[\s,;]+/g,'')];
     const targets=order==='custom'?custom:pool;
     if(!targets.length){el('status').textContent='Enter at least one focus letter.';return}
     const count=Number(el('count').value);
     if(!Number.isInteger(count)||count<1||count>50){el('status').textContent='Choose 1 to 50 worksheet pages.';return}
-    if(targets.some(ch=>!pool.includes(ch))){el('status').textContent=activity==='groups'?'Choose groups from '+groups.join(', ')+'.':'Use German letters. For ß, choose lowercase and exact-case matching.';return}
+    if(targets.some(ch=>!pool.includes(ch))){el('status').textContent=activity==='missing'?'Use letters A–Z for alphabet sequences.':activity==='connect'?'Use letters A–Z or Ä, Ö, Ü for capital and lowercase pairs.':activity==='groups'?'Choose groups from '+groups.join(', ')+'.':'Use German letters. For ß, choose lowercase and exact-case matching.';return}
     let sequence=[], index=0;
     function nextLetter(){
       if(index===sequence.length){
@@ -179,9 +233,13 @@
       }
       return sequence[index++];
     }
-    models=Array.from({length:count},()=>({
-      rows:Array.from({length:activity==='color'?3:6},()=>row(nextLetter(),casing,searchCase,pool,availableFonts,activity,targets,el('target-font').value))
-    }));
+    if(activity==='connect' && new Set(targets).size<2){el('status').textContent='Enter at least two different letters to connect.';return}
+    models=Array.from({length:count},()=>{
+      if(activity==='connect') return {activity,rows:Array.from({length:3},()=>connectSet(nextLetter,targets,availableFonts))};
+      if(activity==='missing') return {activity,stripFont:pick(availableFonts),upperStrip:casing==='Uppercase',rows:Array.from({length:6},()=>missingSet(nextLetter(),casing,availableFonts))};
+      return {activity,rows:Array.from({length:activity==='color'?3:6},()=>row(nextLetter(),casing,searchCase,pool,availableFonts,activity,targets,el('target-font').value))
+      };
+    });
     preview();el('save').disabled=false;
   }
   for(const id of ['activity','letter-order','font-style','target-font','letter-case','search-case','count','focus']){

@@ -1,6 +1,8 @@
 **
 !Dockerfile
 !nginx.conf
+!feedback/
+!feedback/*.py
 !scripts/
 !scripts/stamp-version.cjs
 !outputs/
@@ -14,3 +16,9 @@
 !outputs/assets/release.json
 
 !outputs/assets/*.ttf
+!outputs/assets/alphabet-reader/
+!outputs/assets/alphabet-reader/**
+!outputs/assets/doppellaute-reader/
+!outputs/assets/doppellaute-reader/**
+!outputs/assets/tool-previews/
+!outputs/assets/tool-previews/**

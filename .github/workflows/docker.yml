@@ -18,6 +18,8 @@ jobs:
         run: node scripts/stamp-version.cjs
       - name: Build image
         run: docker build -t germanworksheets:test .
+      - name: Test feedback API
+        run: docker run --rm --entrypoint python3 germanworksheets:test /app/feedback/test_server.py
       - name: Test served pages and assets
         run: |
           docker run -d --name worksheets-test -p 8080:80 germanworksheets:test

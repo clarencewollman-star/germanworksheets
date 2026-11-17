@@ -14,10 +14,88 @@ let revealed=false;
 let letters=[];
 const seen=new Set();
 let complete=false;
+const firstNumber=document.getElementById('range-start');
+const lastNumber=document.getElementById('range-end');
+const numberOrder=document.getElementById('number-order');
+let remainingNumbers=[],currentNumber=null,numberFamily='Arial';
+function germanNumber(n){
+ const small=['null','eins','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn','elf','zwölf','dreizehn','vierzehn','fünfzehn','sechzehn','siebzehn','achtzehn','neunzehn'];
+ const tens=['','','zwanzig','dreißig','vierzig','fünfzig','sechzig','siebzig','achtzig','neunzig'];
+ if(n<20)return small[n];
+ if(n<100){
+  const unit=n%10;
+  return (unit?(unit===1?'ein':small[unit])+'und':'')+tens[Math.floor(n/10)];
+ }
+ const base=n<1000?100:1000,high=Math.floor(n/base);
+ return (high===1?'ein':germanNumber(high))+(base===100?'hundert':'tausend')+(n%base?germanNumber(n%base):'');
+}
+function chooseNumberFont(){
+ numberFamily=font.value==='mixed'?['Arial','Hand','Handschrift','Fraktur'][Math.floor(Math.random()*4)]:font.value;
+}
+async function renderNumber(){
+ if(currentNumber===null)return;
+ const numeral=String(currentNumber),name=germanNumber(currentNumber);
+ const labels=numberOrder.value==='name'?[name,numeral]:[numeral,name];
+ const pending=numberOrder.value!=='together'&&!revealed;
+ if(pending)labels.pop();
+ next.textContent=pending?(numberOrder.value==='name'?'Reveal number':'Reveal name'):'Next number';
+ stage.setAttribute('aria-label',labels.join(', ')+' — '+next.textContent);
+ stage.replaceChildren(...labels.map(label=>{
+  const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),text=document.createElementNS(ns,'text');
+  const encode={Hand:convert,Handschrift:convertHandschrift,Fraktur:convertFraktur}[numberFamily];
+  text.textContent=encode?encode(label):label;
+  text.setAttribute('font-size','100');text.setAttribute('font-family',numberFamily);text.setAttribute('fill','#15271d');
+  svg.appendChild(text);
+  function fit(){
+   if(!svg.isConnected)return;
+   const box=text.getBBox();
+   svg.setAttribute('viewBox',[box.x-5,box.y-5,box.width+10,box.height+10].join(' '));
+  }
+  queueMicrotask(fit);
+  document.fonts.load('100px '+numberFamily,text.textContent).then(fit);
+  return svg;
+ }));
+}
+function drawNumber(){
+ const lo=firstNumber.valueAsNumber,hi=lastNumber.valueAsNumber;
+ const invalid=!Number.isInteger(lo)||!Number.isInteger(hi)||lo<0||hi>9999||lo>hi;
+ document.getElementById('range-error').hidden=!invalid;
+ next.disabled=stage.disabled=invalid;
+ if(invalid){currentNumber=null;stage.replaceChildren();stage.removeAttribute('aria-label');return}
+ if(!remainingNumbers.length)remainingNumbers=Array.from({length:hi-lo+1},(_,i)=>lo+i);
+ const index=Math.floor(Math.random()*remainingNumbers.length);
+ currentNumber=remainingNumbers[index];
+ remainingNumbers[index]=remainingNumbers.at(-1);
+ remainingNumbers.pop();
+ revealed=false;
+ stage.dataset.completion='✓ Range complete';
+ stage.classList.toggle('alphabet-complete',!remainingNumbers.length);
+ chooseNumberFont();
+ renderNumber();
+}
+function changeReview(){
+ const numbers=review.value==='numbers';
+ for(const control of document.querySelectorAll('[data-number-control]'))control.hidden=!numbers;
+ for(const control of [casing,count,pictures])control.closest('label').hidden=numbers;
+ stage.classList.toggle('numbers',numbers);
+ document.getElementById('range-error').hidden=true;
+ next.disabled=stage.disabled=false;
+ if(numbers){
+  stage.classList.remove('sounds','multiple','with-pictures');
+  document.getElementById('reveal-option').hidden=true;
+  remainingNumbers=[];drawNumber();
+ }else restartAlphabet();
+}
 function awaitingReveal(){
  return pictures.checked && reveal.checked && !revealed;
 }
 function advance(){
+ if(review.value==='numbers'){
+  if(currentNumber===null)return;
+  if(!revealed && numberOrder.value!=='together'){revealed=true;renderNumber()}
+  else drawNumber();
+  return;
+ }
  if(awaitingReveal()){
   revealed=true;
   updatePictures();
@@ -45,6 +123,58 @@ function updatePictures(){
   image.style.visibility=awaitingReveal()?'hidden':'visible';
  });
 }
+// Legacy script fonts store entry and exit strokes as separate characters.
+ // At their advance boundaries the two outlines can leave a small step or gap.
+function joinScriptStroke(ctx,boundary,em){
+ const radius=Math.round(em*.016);
+ const x=Math.round(boundary)-radius, width=2*radius+1;
+ if(x<0 || x+width>ctx.canvas.width)return;
+ const h=ctx.canvas.height;
+ const pixels=ctx.getImageData(x,0,width,h);
+ function runs(column){
+  const spans=[];
+  let start=-1;
+  for(let y=0;y<=h;y++){
+   const ink=y<h && pixels.data[(y*width+column)*4+3]>=128;
+   if(ink && start<0)start=y;
+   if(!ink && start>=0){spans.push([start,y]);start=-1}
+  }
+  return spans;
+ }
+ const a=runs(0),b=runs(width-1);
+ // Only bridge unambiguous single strokes, never a loop or a separate mark.
+ if(a.length!==1 || b.length!==1 || Math.abs(a[0][0]-b[0][0])>em*.06)return;
+ ctx.clearRect(x+1,0,width-2,h);
+ ctx.beginPath();
+ ctx.moveTo(x+1,a[0][0]);ctx.lineTo(x+width-1,b[0][0]);
+ ctx.lineTo(x+width-1,b[0][1]);ctx.lineTo(x+1,a[0][1]);
+ ctx.closePath();ctx.fill();
+}
+// Rasterize complete glyph runs at a fixed resolution so changing the projection
+// size never rounds the component strokes separately at the final display size.
+async function paintLetter(canvas,family,text){
+ const em=768;
+ const descriptor=em+'px '+family;
+ await document.fonts.load(descriptor,text);
+ if(!canvas.isConnected)return;
+ const ctx=canvas.getContext('2d');
+ ctx.font=descriptor;
+ const metrics=ctx.measureText(text);
+ const pad=4;
+ const left=Math.ceil(metrics.actualBoundingBoxLeft)+pad;
+ const ascent=Math.ceil(metrics.actualBoundingBoxAscent)+pad;
+ canvas.width=Math.max(1,left+Math.ceil(metrics.actualBoundingBoxRight)+pad);
+ canvas.height=Math.max(1,ascent+Math.ceil(metrics.actualBoundingBoxDescent)+pad);
+ ctx.font=descriptor;
+ ctx.fillStyle='#15271d';
+ ctx.fillText(text,left,ascent);
+ if(family==='Hand'||family==='Handschrift'){
+  if(text.startsWith('#'))joinScriptStroke(ctx,left+ctx.measureText('#').width,em);
+  if(text.endsWith('$'))joinScriptStroke(ctx,left+ctx.measureText(text.slice(0,-1)).width,em);
+ }
+ canvas.style.width=canvas.width/em+'em';
+ canvas.style.height=canvas.height/em+'em';
+}
 function showLetter(){
  const encoders={Hand:convert,Handschrift:convertHandschrift,Fraktur:convertFraktur};
  const available=['Arial','Hand','Handschrift','Fraktur'];
@@ -57,12 +187,17 @@ function showLetter(){
   const encode=encoders[family];
   const glyph=document.createElement('span');
   glyph.style.fontFamily=family+', sans-serif';
-  if(letter==='_st'){
-   const label=document.createElement('span');
-   label.className='final-st';
-   label.textContent=encode?encode('st'):'st';
-   glyph.appendChild(label);
-  }else glyph.textContent=encode?encode(letter):letter;
+  const label=document.createElement('span');
+  const finalSt=letter==='_st';
+  if(finalSt)label.className='final-st';
+  const text=finalSt?'st':letter;
+  const encoded=encode?encode(text):text;
+  if(encode){
+   const canvas=document.createElement('canvas');
+   label.appendChild(canvas);
+   paintLetter(canvas,family,encoded).catch(()=>{label.textContent=encoded});
+  }else label.textContent=text;
+  glyph.appendChild(label);
   return glyph;
  }));
  updatePictures();
@@ -103,18 +238,21 @@ function nextLetter(){
  stage.classList.toggle('alphabet-complete',complete);
  showLetter();
 }
-reveal.addEventListener('change',()=>{revealed=false;updatePictures()});
+reveal.addEventListener('change',()=>{if(review.value!=='numbers'){revealed=false;updatePictures()}});
 function restartAlphabet(){
+ if(review.value==='numbers')return;
  seen.clear();
  complete=false;
  nextLetter();
 }
-review.addEventListener('change',restartAlphabet);
+review.addEventListener('change',changeReview);
+for(const field of [firstNumber,lastNumber])field.addEventListener('input',()=>{if(review.value==='numbers'){remainingNumbers=[];drawNumber()}});
+numberOrder.addEventListener('change',()=>{if(review.value==='numbers'){revealed=false;renderNumber()}});
 pictures.addEventListener('change',restartAlphabet);
-count.addEventListener('change',nextLetter);
+count.addEventListener('change',()=>{if(review.value!=='numbers')nextLetter()});
 stage.addEventListener('click',advance);
 next.addEventListener('click',advance);
-font.addEventListener('change',showLetter);
+font.addEventListener('change',()=>{if(review.value==='numbers'){chooseNumberFont();renderNumber()}else showLetter()});
 casing.addEventListener('change',restartAlphabet);
 document.addEventListener('keydown',event=>{
  if(!['Space','ArrowRight','PageDown'].includes(event.code)||event.target.closest('select, input'))return;
@@ -129,4 +267,4 @@ full.addEventListener('click',async()=>{
  try{await projection.requestFullscreen();stage.focus()}
  catch{stage.focus()}
 });
-nextLetter();
+changeReview();

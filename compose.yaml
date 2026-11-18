@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       FEEDBACK_ADMIN_USER: ${FEEDBACK_ADMIN_USER:-admin}
-      FEEDBACK_ADMIN_PASSWORD: ${FEEDBACK_ADMIN_PASSWORD:?Set FEEDBACK_ADMIN_PASSWORD}
+      FEEDBACK_ADMIN_PASSWORD: ${FEEDBACK_ADMIN_PASSWORD:-}
     volumes:
       - feedback-data:/data
 volumes:

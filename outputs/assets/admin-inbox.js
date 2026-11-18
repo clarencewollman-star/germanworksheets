@@ -81,6 +81,39 @@
   el('logout').addEventListener('click',async()=>{
     try{await api('logout',{});location.reload()}catch(error){report(error)}
   });
+  async function initialize() {
+    const status = await api('setup-status');
+    el('setup-form').hidden = !status.needsSetup;
+    el('login-form').hidden = status.needsSetup;
+    if (!status.needsSetup) await refresh().catch(error => { if(error.message !== 'Please sign in.') report(error); });
+  }
+  el('setup-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(el('setup-password').value !== el('setup-confirm').value) return report(new Error('Passwords do not match.'));
+    const button=event.submitter; button.disabled=true;
+    try {
+      await api('setup',{code:el('setup-code').value,username:el('setup-user').value,password:el('setup-password').value});
+      el('username').value=el('setup-user').value;
+      el('setup-form').reset();el('setup-form').hidden=true;el('login-form').hidden=false;
+      el('admin-status').textContent='Account created. Sign in with your new password.';
+    } catch(error) { report(error); } finally { button.disabled=false; }
+  });
+  el('account-toggle').addEventListener('click',async()=>{
+    if(!el('account-form').hidden){el('account-form').hidden=true;return;}
+    try{const account=await api('account');el('account-user').value=account.username;el('account-form').hidden=false;}catch(error){report(error);}
+  });
+  el('account-form').addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(el('account-password').value!==el('account-confirm').value)return report(new Error('Passwords do not match.'));
+    const button=event.submitter;button.disabled=true;
+    try {
+      await api('change-password',{username:el('account-user').value,currentPassword:el('account-current').value,password:el('account-password').value});
+      el('username').value=el('account-user').value;el('account-form').reset();el('account-form').hidden=true;
+      el('inbox').hidden=true;el('login-form').hidden=false;el('password').value='';
+      selected=null;messages=[];request++;el('detail').hidden=true;el('message-list').replaceChildren();
+      el('admin-status').textContent='Account updated. Sign in with your new password.';
+    }catch(error){report(error);}finally{button.disabled=false;}
+  });
   if(location.protocol==='file:')el('admin-status').textContent='Open /admin on the running local server or website to use the inbox.';
-  else refresh().catch(error=>{if(error.message!=='Please sign in.')report(error)});
+  else initialize().catch(report);
 })();

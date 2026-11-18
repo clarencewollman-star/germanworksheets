@@ -21,8 +21,8 @@ DATA.mkdir(parents=True, exist_ok=True)
 DB = DATA / 'feedback.sqlite3'
 USER = os.environ.get('FEEDBACK_ADMIN_USER', 'admin')
 PASSWORD = os.environ.get('FEEDBACK_ADMIN_PASSWORD', '')
-SALT = secrets.token_bytes(32)
-PASSWORD_HASH = hashlib.scrypt(PASSWORD.encode(), salt=SALT, n=16384, r=8, p=1)
+def password_hash(password, salt):
+    return hashlib.scrypt(password.encode(), salt=salt, n=32768, r=8, p=1, maxmem=67108864)
 SECURE = os.environ.get('FEEDBACK_COOKIE_SECURE', 'true').lower() != 'false'
 PREFIX = '/api/feedback'
 MAX_BODY = 7200000
@@ -49,12 +49,24 @@ with database() as db:
         page TEXT NOT NULL, version TEXT NOT NULL, screenshot BLOB,
         status TEXT NOT NULL DEFAULT 'New', unread INTEGER NOT NULL DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS admin (id INTEGER PRIMARY KEY CHECK(id=1), username TEXT NOT NULL, salt BLOB NOT NULL, hash BLOB NOT NULL);
+    CREATE TABLE IF NOT EXISTS setup (id INTEGER PRIMARY KEY CHECK(id=1), hash TEXT NOT NULL, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS attempts (identity TEXT, kind TEXT, created INTEGER);
     CREATE INDEX IF NOT EXISTS attempts_lookup ON attempts(identity, kind, created);
     ''')
     # Restarting the service revokes sessions, including after credential changes.
     db.execute('DELETE FROM sessions')
+    db.execute('DELETE FROM setup')
+    if not db.execute('SELECT 1 FROM admin').fetchone():
+        if PASSWORD:
+            salt = secrets.token_bytes(32)
+            db.execute('INSERT INTO admin VALUES (1,?,?,?)', (USER, salt, password_hash(PASSWORD, salt)))
+        else:
+            code = secrets.token_urlsafe(32)
+            db.execute('INSERT INTO setup VALUES (1,?,?)', (hashlib.sha256(code.encode()).hexdigest(), int(time.time())+86400))
+            print('German Worksheets admin setup code: ' + code, flush=True)
+            print('Open /admin to create your account. Code expires in 24 hours; restart to generate a new code.', flush=True)
 
 
 class RequestError(Exception):
@@ -138,6 +150,15 @@ class Handler(BaseHTTPRequestHandler):
             raise RequestError(400, 'Please write a message.')
         return value
 
+    def credentials(self, data):
+        username = self.text(data, 'username', 80)
+        password = data.get('password', '')
+        if not username:
+            raise RequestError(400, 'Enter a username.')
+        if not isinstance(password, str) or not 15 <= len(password) <= 1000:
+            raise RequestError(400, 'Use a password between 15 and 1000 characters.')
+        return username, password
+
     def screenshot(self, value):
         if not value:
             return None
@@ -174,6 +195,28 @@ class Handler(BaseHTTPRequestHandler):
     def route(self, method):
         path = urlparse(self.path).path.removeprefix(PREFIX).strip('/')
         with database() as db:
+            if method == 'GET' and path == 'setup-status':
+                self.reply(200, {'needsSetup': not bool(db.execute('SELECT 1 FROM admin').fetchone())})
+                return
+            if method == 'POST' and path == 'setup':
+                data = self.body()
+                self.limit(db, 'setup', 10, 900)
+                username, password = self.credentials(data)
+                code = data.get('code', '')
+                if not isinstance(code, str) or len(code) > 200:
+                    raise RequestError(400, 'Invalid setup code.')
+                db.execute('BEGIN IMMEDIATE')
+                setup = db.execute('SELECT * FROM setup WHERE id=1').fetchone()
+                if db.execute('SELECT 1 FROM admin').fetchone():
+                    raise RequestError(409, 'Setup is already complete. Please sign in.')
+                if not setup or setup['expires'] <= time.time() or not hmac.compare_digest(setup['hash'], hashlib.sha256(code.strip().encode()).hexdigest()):
+                    raise RequestError(403, 'Invalid or expired setup code. Check the latest container logs.')
+                salt = secrets.token_bytes(32)
+                db.execute('INSERT INTO admin VALUES (1,?,?,?)', (username, salt, password_hash(password, salt)))
+                db.execute('DELETE FROM setup')
+                db.commit()
+                self.reply(201, {'ok': True})
+                return
             if method == 'POST' and path == 'submit':
                 data = self.body()
                 self.limit(db, 'submit', 12, 3600)
@@ -196,13 +239,14 @@ class Handler(BaseHTTPRequestHandler):
             if method == 'POST' and path == 'login':
                 data = self.body()
                 self.limit(db, 'login', 10, 900)
-                if not PASSWORD:
-                    raise RequestError(503, 'Administrator login has not been configured on the server.')
+                # Lock credential verification and session creation against password changes.
+                db.execute('BEGIN IMMEDIATE')
+                admin = db.execute('SELECT * FROM admin WHERE id=1').fetchone()
                 supplied = data.get('password', '')
-                if not isinstance(supplied, str) or len(supplied) > 1000:
+                if not admin or not isinstance(supplied, str) or len(supplied) > 1000:
                     raise RequestError(401, 'Incorrect username or password.')
-                candidate = hashlib.scrypt(supplied.encode(), salt=SALT, n=16384, r=8, p=1)
-                if not hmac.compare_digest(candidate, PASSWORD_HASH) or data.get('username') != USER:
+                candidate = password_hash(supplied, admin['salt'])
+                if not hmac.compare_digest(candidate, admin['hash']) or data.get('username') != admin['username']:
                     raise RequestError(401, 'Incorrect username or password.')
                 token = secrets.token_urlsafe(32)
                 db.execute('DELETE FROM sessions WHERE expires<?', (int(time.time()),))
@@ -211,7 +255,27 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
                 self.reply(200, {'ok': True}, self.cookie(token, 43200))
                 return
+            if method == 'POST' and path == 'change-password':
+                data = self.body()
+                self.authenticated(db)
+                self.limit(db, 'password-change', 10, 900)
+                username, password = self.credentials(data)
+                current = data.get('currentPassword', '')
+                db.execute('BEGIN IMMEDIATE')
+                self.authenticated(db)
+                admin = db.execute('SELECT * FROM admin WHERE id=1').fetchone()
+                if not isinstance(current, str) or len(current) > 1000 or not hmac.compare_digest(password_hash(current, admin['salt']), admin['hash']):
+                    raise RequestError(403, 'Current password is incorrect.')
+                salt = secrets.token_bytes(32)
+                db.execute('UPDATE admin SET username=?,salt=?,hash=? WHERE id=1', (username, salt, password_hash(password, salt)))
+                db.execute('DELETE FROM sessions')
+                db.commit()
+                self.reply(200, {'ok': True}, self.cookie('', 0))
+                return
             self.authenticated(db)
+            if method == 'GET' and path == 'account':
+                self.reply(200, {'username': db.execute('SELECT username FROM admin WHERE id=1').fetchone()[0]})
+                return
             if method == 'GET' and path == 'messages':
                 rows = db.execute('SELECT id,created,name,email,substr(message,1,160) AS message,page,version,status,unread, screenshot IS NOT NULL AS has_image FROM messages ORDER BY id DESC').fetchall()
                 self.reply(200, {'messages': [dict(row) for row in rows],

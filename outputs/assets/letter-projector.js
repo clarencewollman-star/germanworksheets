@@ -9,6 +9,7 @@ const pictures=document.getElementById('pictures');
 const reveal=document.getElementById('reveal');
 const next=document.getElementById('next');
 const review=document.getElementById('review');
+const practiceSyllables='ab ad af ag ak al am an ap ar as at av aw az ba be bi bo bu da de di do du eb ed ef eg eh ek el em en ep er es et ew ez fa fe fi fo fu ga ge gi go gu ha he hi ho hu ib id if ig ik il im in ip ir is it iz ja je ji jo ju ka ke ki ko ku la le li lo lu ma me mi mo mu na ne ni no nu ob od of og ok ol om on op or os ot ow oz pa pe pi po pu qu ra re ri ro ru sa se si so su ta te ti to tu ub ud uf ug uh uk ul um un up ur us wa we wi wo wu za ze zi zo zu'.split(' ');
 let keys=[];
 let revealed=false;
 let letters=[];
@@ -29,6 +30,26 @@ function germanNumber(n){
  const base=n<1000?100:1000,high=Math.floor(n/base);
  return (high===1?'ein':germanNumber(high))+(base===100?'hundert':'tausend')+(n%base?germanNumber(n%base):'');
 }
+// Reading chunks keep the written number intact while highlighting its components.
+function numberParts(n){
+ if(n<13)return [germanNumber(n)];
+ if(n<20)return [germanNumber(n).slice(0,-4),'zehn'];
+ if(n<100)return n%10?[n%10===1?'ein':germanNumber(n%10),'und',germanNumber(n-n%10)]:[germanNumber(n)];
+ const base=n<1000?100:1000,high=Math.floor(n/base);
+ return [...(high===1?['ein']:numberParts(high)),base===100?'hundert':'tausend',...(n%base?numberParts(n%base):[])];
+}
+function coloredNumberRuns(encoded,parts,family){
+ const expansions=family==='Fraktur'?{'¡':2,'¿':2,'|':2}:family==='Arial'?{}:{'#':0,'$':0,'<':3,'`':2,'¤':2,'µ':2,'{':2,'\\':2,'~':2};
+ let offset=0,index=0,end=parts[0].length;
+ const runs=[];
+ for(const ch of encoded){
+  const length=Object.hasOwn(expansions,ch)?expansions[ch]:1;
+  if(length)while(offset>=end&&index<parts.length-1)end+=parts[++index].length;
+  if(!runs.length||runs.at(-1).index!==index)runs.push({index,text:''});
+  runs.at(-1).text+=ch;offset+=length;
+ }
+ return runs;
+}
 function chooseNumberFont(){
  numberFamily=font.value==='mixed'?['Arial','Hand','Handschrift','Fraktur'][Math.floor(Math.random()*4)]:font.value;
 }
@@ -43,7 +64,13 @@ async function renderNumber(){
  stage.replaceChildren(...labels.map(label=>{
   const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),text=document.createElementNS(ns,'text');
   const encode={Hand:convert,Handschrift:convertHandschrift,Fraktur:convertFraktur}[numberFamily];
-  text.textContent=encode?encode(label):label;
+  const encoded=encode?encode(label):label;
+  if(label===name&&document.getElementById('number-colors').checked){
+   const palette=['#175fa8','#ad3833','#30743d'];
+   for(const run of coloredNumberRuns(encoded,numberParts(currentNumber),numberFamily)){
+    const span=document.createElementNS(ns,'tspan');span.setAttribute('fill',palette[run.index%palette.length]);span.textContent=run.text;text.appendChild(span);
+   }
+  }else text.textContent=encoded;
   text.setAttribute('font-size','100');text.setAttribute('font-family',numberFamily);text.setAttribute('fill','#15271d');
   svg.appendChild(text);
   function fit(){
@@ -105,8 +132,12 @@ function changeReview(){
  document.getElementById('color-order-control').hidden=!colors;
  document.getElementById('color-choices').hidden=!colors;
  stage.classList.toggle('colors',colors);
+ const syllables=review.value==='syllables';
+ document.getElementById('case-label').textContent=syllables?'First letter':'Letters';
+ document.getElementById('count-label').textContent=syllables?'Syllables per page':'Letters per page';
  for(const control of document.querySelectorAll('[data-number-control]'))control.hidden=!numbers;
  for(const control of [casing,count,pictures])control.closest('label').hidden=numbers||colors;
+ pictures.closest('label').hidden=numbers||colors||syllables;
  stage.classList.toggle('numbers',numbers);
  document.getElementById('range-error').hidden=true;
  next.disabled=stage.disabled=false;
@@ -118,7 +149,7 @@ function changeReview(){
  }else restartAlphabet();
 }
 function awaitingReveal(){
- return pictures.checked && reveal.checked && !revealed;
+ return review.value!=='syllables' && pictures.checked && reveal.checked && !revealed;
 }
 function advance(){
  if(review.value==='colors'){if(!revealed&&colorOrder.value!=='together'){revealed=true;renderColor()}else drawColor();return;}
@@ -134,14 +165,15 @@ function advance(){
  }else nextLetter();
 }
 function updatePictures(){
- document.getElementById('reveal-option').hidden=!pictures.checked;
+ const withPictures=pictures.checked&&review.value!=='syllables';
+ document.getElementById('reveal-option').hidden=!withPictures;
  const action=awaitingReveal()?'Reveal pictures':'Next page';
  next.textContent=action;
  stage.setAttribute('aria-label',letters.join(', ')+(complete?' — '+stage.dataset.completion:'')+' — '+action);
- stage.classList.toggle('with-pictures',pictures.checked);
+ stage.classList.toggle('with-pictures',withPictures);
  Array.from(stage.children).forEach((glyph,index)=>{
   let image=glyph.querySelector('img');
-  if(!pictures.checked){
+  if(!withPictures){
    image?.remove();
    return;
   }
@@ -242,9 +274,10 @@ function nextLetter(){
  const pool=casing.value==='lower'?lowercase:casing.value==='upper'?uppercase:lowercase+uppercase;
  if(complete)seen.clear();
  const sounds=review.value==='sounds';
- stage.classList.toggle('sounds',sounds);
- stage.dataset.completion=sounds?'✓ Doppellaute complete':'✓ Alphabet complete';
- const alphabet=sounds?Object.keys(readerCards):[...new Set([...pool].map(letter=>letter.toLowerCase()))]
+ const syllables=review.value==='syllables';
+ stage.classList.toggle('sounds',sounds||syllables);
+ stage.dataset.completion=syllables?'✓ Syllable practice complete':sounds?'✓ Doppellaute complete':'✓ Alphabet complete';
+ const alphabet=syllables?practiceSyllables:sounds?Object.keys(readerCards):[...new Set([...pool].map(letter=>letter.toLowerCase()))]
   .filter(letter=>!pictures.checked || /^[a-z]$/.test(letter));
  const previous=keys;
  keys=[];
@@ -260,7 +293,10 @@ function nextLetter(){
   seen.add(key);
   keys.push(key);
   let forms;
-  if(sounds){
+  if(syllables){
+   const capital=key[0].toUpperCase()+key.slice(1);
+   forms=casing.value==='mixed'?[key,capital]:[casing.value==='upper'?capital:key];
+  }else if(sounds){
    const variants=readerCards[key];
    forms=casing.value==='mixed'?variants:[casing.value==='upper'?variants.at(-1):variants[0]];
   }else forms=[...pool].filter(letter=>letter.toLowerCase()===key);
@@ -300,3 +336,5 @@ full.addEventListener('click',async()=>{
  catch{stage.focus()}
 });
 changeReview();
+
+document.getElementById('number-colors').addEventListener('change',()=>{if(review.value==='numbers')renderNumber()});

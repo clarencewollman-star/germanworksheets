@@ -73,13 +73,44 @@ function drawNumber(){
  chooseNumberFont();
  renderNumber();
 }
+const colorOrder=document.getElementById('color-order');
+let remainingColors=[],currentColor=null;
+function renderColor(){
+ stage.replaceChildren();
+ if(!currentColor)return;
+ const pending=colorOrder.value!=='together'&&!revealed;
+ next.textContent=pending?(colorOrder.value==='name'?'Reveal color':'Reveal name'):'Next color';
+ const swatch=document.createElement('span');swatch.className='color-swatch';swatch.style.background=currentColor.hex;
+ const label=document.createElement('canvas');label.className='color-name';
+ const encode={Hand:convert,Handschrift:convertHandschrift,Fraktur:convertFraktur}[numberFamily];
+ const showSwatch=!pending||colorOrder.value==='color';
+ const showName=!pending||colorOrder.value==='name';
+ if(showSwatch)stage.append(swatch);
+ if(showName){stage.append(label);paintLetter(label,numberFamily,encode?encode(currentColor.name):currentColor.name).then(()=>{label.style.width='auto';label.style.height='30%';});}
+ stage.setAttribute('aria-label',(showName?currentColor.name:'Color swatch')+' — '+next.textContent);
+}
+function drawColor(){
+ const chosen=selectedColors();
+ next.disabled=stage.disabled=!chosen.length;
+ if(!chosen.length){currentColor=null;stage.replaceChildren();stage.classList.remove('alphabet-complete');stage.setAttribute('aria-label','Choose at least one color');return;}
+ if(!remainingColors.length)remainingColors=chosen.slice();
+ currentColor=remainingColors.splice(Math.floor(Math.random()*remainingColors.length),1)[0];
+ revealed=false;chooseNumberFont();
+ stage.dataset.completion='✓ Colors complete';stage.classList.toggle('alphabet-complete',!remainingColors.length);renderColor();
+}
+colorOrder.addEventListener('change',()=>{revealed=false;if(review.value==='colors')renderColor()});
+document.getElementById('color-choices').addEventListener('change',()=>{remainingColors=[];if(review.value==='colors')drawColor()});
 function changeReview(){
- const numbers=review.value==='numbers';
+ const numbers=review.value==='numbers',colors=review.value==='colors';
+ document.getElementById('color-order-control').hidden=!colors;
+ document.getElementById('color-choices').hidden=!colors;
+ stage.classList.toggle('colors',colors);
  for(const control of document.querySelectorAll('[data-number-control]'))control.hidden=!numbers;
- for(const control of [casing,count,pictures])control.closest('label').hidden=numbers;
+ for(const control of [casing,count,pictures])control.closest('label').hidden=numbers||colors;
  stage.classList.toggle('numbers',numbers);
  document.getElementById('range-error').hidden=true;
  next.disabled=stage.disabled=false;
+ if(colors){stage.classList.remove('sounds','multiple','with-pictures');document.getElementById('reveal-option').hidden=true;remainingColors=[];drawColor();return;}
  if(numbers){
   stage.classList.remove('sounds','multiple','with-pictures');
   document.getElementById('reveal-option').hidden=true;
@@ -90,6 +121,7 @@ function awaitingReveal(){
  return pictures.checked && reveal.checked && !revealed;
 }
 function advance(){
+ if(review.value==='colors'){if(!revealed&&colorOrder.value!=='together'){revealed=true;renderColor()}else drawColor();return;}
  if(review.value==='numbers'){
   if(currentNumber===null)return;
   if(!revealed && numberOrder.value!=='together'){revealed=true;renderNumber()}
@@ -238,9 +270,9 @@ function nextLetter(){
  stage.classList.toggle('alphabet-complete',complete);
  showLetter();
 }
-reveal.addEventListener('change',()=>{if(review.value!=='numbers'){revealed=false;updatePictures()}});
+reveal.addEventListener('change',()=>{if(!['numbers','colors'].includes(review.value)){revealed=false;updatePictures()}});
 function restartAlphabet(){
- if(review.value==='numbers')return;
+ if(['numbers','colors'].includes(review.value))return;
  seen.clear();
  complete=false;
  nextLetter();
@@ -249,10 +281,10 @@ review.addEventListener('change',changeReview);
 for(const field of [firstNumber,lastNumber])field.addEventListener('input',()=>{if(review.value==='numbers'){remainingNumbers=[];drawNumber()}});
 numberOrder.addEventListener('change',()=>{if(review.value==='numbers'){revealed=false;renderNumber()}});
 pictures.addEventListener('change',restartAlphabet);
-count.addEventListener('change',()=>{if(review.value!=='numbers')nextLetter()});
+count.addEventListener('change',()=>{if(!['numbers','colors'].includes(review.value))nextLetter()});
 stage.addEventListener('click',advance);
 next.addEventListener('click',advance);
-font.addEventListener('change',()=>{if(review.value==='numbers'){chooseNumberFont();renderNumber()}else showLetter()});
+font.addEventListener('change',()=>{if(review.value==='colors'){chooseNumberFont();renderColor()}else if(review.value==='numbers'){chooseNumberFont();renderNumber()}else showLetter()});
 casing.addEventListener('change',restartAlphabet);
 document.addEventListener('keydown',event=>{
  if(!['Space','ArrowRight','PageDown'].includes(event.code)||event.target.closest('select, input'))return;

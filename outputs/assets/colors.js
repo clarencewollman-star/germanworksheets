@@ -1,0 +1,2 @@
+const GermanColors=[{"name": "rot", "hex": "#df2929"}, {"name": "blau", "hex": "#2463db"}, {"name": "gelb", "hex": "#ffdf22"}, {"name": "grün", "hex": "#269642"}, {"name": "orange", "hex": "#f58b21"}, {"name": "lila", "hex": "#873cb4"}, {"name": "rosa", "hex": "#f49ac2"}, {"name": "braun", "hex": "#87502b"}, {"name": "schwarz", "hex": "#111111"}, {"name": "weiß", "hex": "#ffffff"}, {"name": "grau", "hex": "#898989"}];
+function selectedColors(){return GermanColors.filter((c,i)=>document.getElementById("color-"+i).checked)}

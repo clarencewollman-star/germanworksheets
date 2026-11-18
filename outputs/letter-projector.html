@@ -33,36 +33,36 @@ label{font-weight:600}
 #stage.numbers{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4%;padding:4% 6%}
 #stage.numbers svg{display:block;width:100%;height:40%;overflow:visible}
 [data-number-control] input{max-width:8em}
-</style>
+#stage.colors{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8%;padding:5%}#stage.colors .color-swatch{display:block;width:55%;height:40%;min-height:60px;border:1px solid #aaa;border-radius:12px}#stage.colors .color-name{display:block;height:30%;max-width:90%;object-fit:contain}</style>
 <link rel="stylesheet" href="assets/generated/app-theme.ef9188bfb49f.css">
 <link rel="stylesheet" href="assets/generated/feedback.5e9a5e028c7c.css"></head>
 <body><main>
 <a href="index.html">← All Worksheets</a>
 <h1>Letter Projector (Still in testing)</h1>
 <div class="controls">
-<label>Review<select class="form-select" id="review"><option value="alphabet">Alphabet</option><option value="sounds">Doppellaute und Umlaute</option><option value="numbers">Numbers</option></select></label>
+<label>Review<select class="form-select" id="review"><option value="alphabet">Alphabet</option><option value="sounds">Doppellaute und Umlaute</option><option value="numbers">Numbers</option><option value="colors">Colors</option></select></label>
 <label>Font<select class="form-select" id="font"><option>Arial</option><option value="Hand">BW Hand Schrift</option><option>Handschrift</option><option>Fraktur</option><option value="mixed">Mixed fonts</option></select></label>
 <label hidden data-number-control>From<input type="number" id="range-start" min="0" max="9999" value="1"></label>
 <label hidden data-number-control>To<input type="number" id="range-end" min="0" max="9999" value="20"></label>
 <label hidden data-number-control>Show<select id="number-order"><option value="together">Number and name together</option><option value="number">Number first</option><option value="name">Name first</option></select></label>
-<label>Letters<select class="form-select" id="casing"><option value="lower">Lowercase</option><option value="upper">Uppercase</option><option value="mixed">Mixed case</option></select></label>
+<label hidden id="color-order-control">Show<select id="color-order"><option value="together">Color and name together</option><option value="color">Color first</option><option value="name">Name first</option></select></label><label>Letters<select class="form-select" id="casing"><option value="lower">Lowercase</option><option value="upper">Uppercase</option><option value="mixed">Mixed case</option></select></label>
 <label>Letters per page<select class="form-select" id="letter-count"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
 <label><input type="checkbox" id="pictures"> Show pictures</label>
 <label id="reveal-option" hidden><input type="checkbox" id="reveal"> Reveal pictures on next click</label>
 <button class="primary" id="next">Next page</button>
 <button class="btn btn-outline-secondary" id="full">Full screen</button>
 </div>
-<p hidden id="range-error" role="alert">Enter whole numbers from 0 to 9999. From must be less than or equal to To.</p>
+<details id="color-choices" hidden><summary>Choose colors</summary><div style="display:flex;flex-wrap:wrap;gap:12px;padding:12px 0"><label style="font-weight:400"><input type="checkbox" id="color-0" checked style="width:auto"> rot</label><label style="font-weight:400"><input type="checkbox" id="color-1" checked style="width:auto"> blau</label><label style="font-weight:400"><input type="checkbox" id="color-2" checked style="width:auto"> gelb</label><label style="font-weight:400"><input type="checkbox" id="color-3" checked style="width:auto"> grün</label><label style="font-weight:400"><input type="checkbox" id="color-4" checked style="width:auto"> orange</label><label style="font-weight:400"><input type="checkbox" id="color-5" checked style="width:auto"> lila</label><label style="font-weight:400"><input type="checkbox" id="color-6" checked style="width:auto"> rosa</label><label style="font-weight:400"><input type="checkbox" id="color-7" checked style="width:auto"> braun</label><label style="font-weight:400"><input type="checkbox" id="color-8" checked style="width:auto"> schwarz</label><label style="font-weight:400"><input type="checkbox" id="color-9" checked style="width:auto"> weiß</label><label style="font-weight:400"><input type="checkbox" id="color-10" checked style="width:auto"> grau</label></div></details><p hidden id="range-error" role="alert">Enter whole numbers from 0 to 9999. From must be less than or equal to To.</p>
 <div id="projection"><button type="button" id="exit-full" class="btn btn-light">Exit full screen</button>
 <button data-projector-stage id="stage" aria-live="polite"></button></div>
 <p class="mt-2">Click the page or press Space to advance.</p>
 </main>
-<script src="assets/generated/settings.b976f6264ce7.js"></script>
+<script src="assets/generated/colors.c4415579d65b.js"></script><script src="assets/generated/settings.b976f6264ce7.js"></script>
 <script src="assets/generated/handschrift-metrics.290155e0940e.js"></script>
 <script src="assets/generated/font-conversion.2e03f68842de.js"></script>
-<script src="assets/generated/reader-cards.63420fdb78d1.js"></script><script src="assets/generated/letter-projector.5303ed7211da.js"></script>
+<script src="assets/generated/reader-cards.63420fdb78d1.js"></script><script src="assets/generated/letter-projector.34995b8cdc38.js"></script>
 <script src="assets/generated/app-shell.bc403873a838.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.97f04b8155d9.js"></script>
+<script src="assets/generated/version.d70c01817401.js"></script>
 <script src="assets/generated/update-check.3c11939acad8.js"></script>
 <script src="assets/generated/feedback.8f238172d090.js"></script></body></html>

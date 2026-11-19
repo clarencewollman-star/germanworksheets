@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Bingo · German Worksheets</title>
+  <script src="assets/generated/theme.83c90c9eba70.js"></script>
+  <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
+  <link rel="stylesheet" href="assets/generated/app-theme.ef9188bfb49f.css">
+  <link rel="stylesheet" href="assets/generated/fonts.66af5ca7de04.css">
+  <link rel="stylesheet" href="assets/generated/feedback.5e9a5e028c7c.css">
+  <style>
+    .bingo-settings { display: grid; gap: 18px; }
+    .bingo-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+    .bingo-row label { display: grid; gap: 4px; margin: 0; }
+    .bingo-row input[type="number"] { width: 8em; }
+    .bingo-row select { max-width: 100%; }
+    .bingo-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
+    .bingo-choices label { display: flex; align-items: center; gap: 7px; padding: 6px 10px;
+      margin: 0; border: 1px solid var(--bs-border-color); border-radius: 6px; cursor: pointer; }
+    .bingo-settings input[type="checkbox"] { margin: 0; }
+    #bingo-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; margin-top: 24px; }
+    #bingo-preview canvas { display: block; width: 100%; height: auto; border: 1px solid #b8c6bf; margin-top: 6px; }
+  </style>
+</head>
+<body>
+<main>
+  <a href="index.html">← German Worksheets</a>
+  <h1>Bingo</h1>
+  <form id="bingo-form" class="panel">
+    <fieldset id="bingo-settings" class="bingo-settings">
+      <div class="bingo-row">
+        <label>Play with
+          <select id="bingo-kind">
+            <option value="numbers">Numbers</option>
+            <option value="letters">Letters</option>
+            <option value="sounds">Doppellaute und Umlaute</option>
+          </select>
+        </label>
+        <label>Grid size
+          <select id="bingo-size">
+            <option value="3">3 × 3</option>
+            <option value="4" selected>4 × 4</option>
+            <option value="5">5 × 5</option>
+          </select>
+        </label>
+        <label>Players <input type="number" id="bingo-players" min="1" max="100" value="2" required></label>
+      </div>
+      <div class="bingo-row" id="bingo-range">
+        <label>From <input type="number" id="bingo-from" min="0" max="9999" value="1" required></label>
+        <label>To <input type="number" id="bingo-to" min="0" max="9999" value="30" required></label>
+      </div>
+      <div class="bingo-row">
+        <label id="bingo-display-control" hidden>Show on cards
+          <select id="bingo-display">
+            <option value="text">Letters or sounds</option>
+            <option value="pictures">Pictures only</option>
+          </select>
+        </label>
+        <label id="bingo-case-control" hidden>Letter case
+          <select id="bingo-case">
+            <option value="upper">Uppercase</option>
+            <option value="lower">Lowercase</option>
+            <option value="mixed">Mixed case</option>
+          </select>
+        </label>
+        <label id="bingo-font-control">Card font
+          <select id="bingo-font">
+            <option value="Fraktur">Fraktur</option>
+            <option value="Arial">Arial</option>
+            <option value="Hand">BW Hand Schrift</option>
+            <option value="Handschrift">Handschrift</option>
+          </select>
+        </label>
+      </div>
+      <details id="bingo-pool" hidden>
+        <summary id="bingo-pool-summary">Choose entries</summary>
+        <div class="bingo-row">
+          <button type="button" id="bingo-all">Select all</button>
+          <button type="button" id="bingo-none">Clear selection</button>
+        </div>
+        <div class="bingo-choices" id="bingo-letters"></div>
+        <div class="bingo-choices" id="bingo-sounds" hidden></div>
+      </details>
+      <div><label><input type="checkbox" id="bingo-caller" checked> Include caller checklist</label></div>
+      <div class="bingo-row">
+        <button class="primary" type="submit">Create cards</button>
+        <button type="button" id="bingo-save" disabled>Save PDF</button>
+      </div>
+    </fieldset>
+    <p id="bingo-status" class="status mt-3 mb-0" role="status">Two cards per printed page.</p>
+    <p id="bingo-error" class="text-danger mb-0" role="alert" hidden></p>
+  </form>
+  <section id="bingo-preview" aria-label="Bingo print preview" hidden></section>
+</main>
+<script src="assets/generated/font-conversion.2e03f68842de.js"></script>
+<script src="assets/generated/reader-cards.63420fdb78d1.js"></script>
+<script src="assets/generated/reader-pictures.1cf63a4e93d6.js"></script>
+<script src="assets/generated/pdf.d5e66aedb03b.js"></script>
+<script src="assets/generated/bingo.d62254fbde73.js"></script>
+<script src="assets/generated/settings.b976f6264ce7.js"></script>
+<script src="assets/generated/app-shell.bc403873a838.js"></script>
+<script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
+<script src="assets/generated/version.6073cac09490.js"></script>
+<script src="assets/generated/update-check.3c11939acad8.js"></script>
+<script src="assets/generated/feedback.8f238172d090.js"></script>
+</body>
+</html>

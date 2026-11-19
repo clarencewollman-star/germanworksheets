@@ -213,6 +213,8 @@ async function scheduleLayout(){
     let prefix='';
     for(const run of vowelRuns(line,family)){
      const part=node.cloneNode(false);
+     // SVG otherwise drops spaces at the start or end of each colored run.
+     part.style.whiteSpace='pre';
      part.setAttribute('x',margin+column*(width+gap)+ctx.measureText(prefix).width);
      part.setAttribute('fill',run.red?'#c82020':'black');
      part.textContent=run.text;sheet.appendChild(part);prefix+=run.text;

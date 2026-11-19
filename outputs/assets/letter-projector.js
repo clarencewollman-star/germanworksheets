@@ -56,8 +56,9 @@ function chooseNumberFont(){
 async function renderNumber(){
  if(currentNumber===null)return;
  const numeral=String(currentNumber),name=germanNumber(currentNumber);
- const labels=numberOrder.value==='name'?[name,numeral]:[numeral,name];
- const pending=numberOrder.value!=='together'&&!revealed;
+ const mode=numberOrder.value;
+ const labels=mode==='number-only'?[numeral]:mode==='name-only'?[name]:mode==='name'?[name,numeral]:[numeral,name];
+ const pending=['number','name'].includes(mode)&&!revealed;
  if(pending)labels.pop();
  next.textContent=pending?(numberOrder.value==='name'?'Reveal number':'Reveal name'):'Next number';
  stage.setAttribute('aria-label',labels.join(', ')+' — '+next.textContent);
@@ -65,7 +66,7 @@ async function renderNumber(){
   const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),text=document.createElementNS(ns,'text');
   const encode={Hand:convert,Handschrift:convertHandschrift,Fraktur:convertFraktur}[numberFamily];
   const encoded=encode?encode(label):label;
-  if(label===name&&document.getElementById('number-colors').checked){
+  if(label===name){
    const palette=['#175fa8','#ad3833','#30743d'];
    for(const run of coloredNumberRuns(encoded,numberParts(currentNumber),numberFamily)){
     const span=document.createElementNS(ns,'tspan');span.setAttribute('fill',palette[run.index%palette.length]);span.textContent=run.text;text.appendChild(span);
@@ -155,7 +156,7 @@ function advance(){
  if(review.value==='colors'){if(!revealed&&colorOrder.value!=='together'){revealed=true;renderColor()}else drawColor();return;}
  if(review.value==='numbers'){
   if(currentNumber===null)return;
-  if(!revealed && numberOrder.value!=='together'){revealed=true;renderNumber()}
+  if(!revealed && ['number','name'].includes(numberOrder.value)){revealed=true;renderNumber()}
   else drawNumber();
   return;
  }
@@ -336,5 +337,3 @@ full.addEventListener('click',async()=>{
  catch{stage.focus()}
 });
 changeReview();
-
-document.getElementById('number-colors').addEventListener('change',()=>{if(review.value==='numbers')renderNumber()});

@@ -13,12 +13,43 @@ const traceShade=document.getElementById('trace-shade');
 try{const savedShade=localStorage.getItem('handwriting-trace-shade');if(['#dedede','#b8b8b8','#909090','#606060','#202020'].includes(savedShade))traceShade.value=savedShade}catch{}
 traceShade.addEventListener('change',()=>{try{localStorage.setItem('handwriting-trace-shade',traceShade.value)}catch{}render()});
 const repeatCount=document.getElementById('repeat-count'),blankGuides=document.getElementById('blank-guides');
-const presetDefaults={small:20,medium:26,large:34};
-let presets={...presetDefaults};
-try{const saved=JSON.parse(localStorage.getItem('handwriting-size-presets')||'{}');for(const key of Object.keys(presets)){if(Number.isInteger(saved[key])&&saved[key]>=16&&saved[key]<=120)presets[key]=saved[key]}}catch{}
-function refreshPresets(){for(const key of Object.keys(presets)){document.getElementById('preset-'+key).value=presets[key];size.querySelector('option[value="'+key+'"]').textContent=key[0].toUpperCase()+key.slice(1)+' · '+presets[key]+' pt'}}
-refreshPresets();fontSize.value=presets.medium;
-for(const key of Object.keys(presets)){document.getElementById('preset-'+key).addEventListener('change',event=>{presets[key]=Math.max(16,Math.min(120,Math.round(Number(event.target.value)||presetDefaults[key])));refreshPresets();try{localStorage.setItem('handwriting-size-presets',JSON.stringify(presets));document.getElementById('preset-status').textContent='Sizes saved.'}catch{document.getElementById('preset-status').textContent='Sizes updated for this session; browser storage is unavailable.'}if(size.value===key){fontSize.value=presets[key];render()}})}
+const presetDefaults={small:30,medium:40,large:50};
+const presets={...presetDefaults};
+const presetStorageKey='handwriting-size-presets:v2';
+try {
+ const stored=localStorage.getItem(presetStorageKey);
+ const saved=JSON.parse(stored ?? localStorage.getItem('handwriting-size-presets') ?? '{}');
+ const oldDefaults={small:20,medium:26,large:34};
+ for(const key of Object.keys(presets)){
+  const value=saved?.[key];
+  // Older browsers saved all three values even when only one had been edited.
+  if(stored===null && value===oldDefaults[key])continue;
+  if(Number.isInteger(value) && value>=16 && value<=120)presets[key]=value;
+ }
+}catch{}
+function refreshPresets(){
+ for(const [key,value] of Object.entries(presets)){
+  document.getElementById('preset-'+key).value=value;
+  size.querySelector('option[value="'+key+'"]').textContent=key[0].toUpperCase()+key.slice(1)+' · '+value+' pt';
+ }
+}
+refreshPresets();
+if(size.value!=='custom')fontSize.value=presets[size.value];
+const presetStatus=document.getElementById('preset-status');
+for(const key of Object.keys(presets)){
+ document.getElementById('preset-'+key).addEventListener('change',event=>{
+  presets[key]=Math.max(16,Math.min(120,Math.round(Number(event.target.value)||presetDefaults[key])));
+  refreshPresets();
+  try {
+   const overrides=Object.entries(presets).filter(([name,value])=>value!==presetDefaults[name]);
+   localStorage.setItem(presetStorageKey,JSON.stringify(Object.fromEntries(overrides)));
+   presetStatus.textContent='Sizes saved.';
+  }catch{
+   presetStatus.textContent='Sizes updated for this session; browser storage is unavailable.';
+  }
+  if(size.value===key){fontSize.value=presets[key];render()}
+ });
+}
 const widths={"\u0000": 0, "\r": 500, " ": 504, "!": 507, "\"": 591, "#": 154, "$": 200, "%": 838, "&": 733, "'": 292, "(": 723, ")": 557, "*": 605, "+": 421, ",": 374, "-": 524, ".": 220, "/": 731, "0": 510, "1": 436, "2": 519, "3": 485, "4": 548, "5": 519, "6": 494, "7": 476, "8": 529, "9": 488, ":": 312, ";": 397, "<": 939, "=": 1059, ">": 688, "?": 658, "@": 685, "A": 836, "B": 796, "C": 734, "D": 746, "E": 615, "F": 630, "G": 692, "H": 338, "I": 662, "J": 672, "K": 771, "L": 711, "M": 1305, "N": 910, "O": 550, "P": 701, "Q": 722, "R": 910, "S": 597, "T": 656, "U": 966, "V": 991, "W": 1359, "X": 819, "Y": 1030, "Z": 591, "[": 647, "\\": 788, "]": 598, "^": 750, "_": 863, "`": 488, "a": 572, "b": 477, "c": 291, "d": 439, "e": 465, "f": 341, "g": 603, "h": 332, "i": 296, "j": 301, "k": 550, "l": 392, "m": 764, "n": 526, "o": 445, "p": 493, "q": 573, "r": 520, "s": 408, "t": 487, "u": 526, "v": 653, "w": 833, "x": 515, "y": 655, "z": 483, "{": 691, "|": 630, "}": 833, "~": 836, "\u00a0": 630, "\u00a4": 770, "\u00a7": 637, "\u00a9": 850, "\u00aa": 783, "\u00ab": 796, "\u00ae": 808, "\u00b0": 1083, "\u00b2": 591, "\u00b4": 796, "\u00b5": 983, "\u00b6": 883, "\u00bb": 744, "\u00bc": 861, "\u00bd": 874, "\u00be": 859, "\u00c4": 836, "\u00d4": 446, "\u00d5": 704, "\u00d6": 550, "\u00d8": 520, "\u00d9": 597, "\u00db": 532, "\u00dc": 989, "\u00dd": 372, "\u00df": 705, "\u00e0": 683, "\u00e1": 477, "\u00e4": 574, "\u00e6": 963, "\u00e7": 557, "\u00e8": 1359, "\u00e9": 731, "\u00ea": 515, "\u00ed": 700, "\u00ef": 397, "\u00f3": 646, "\u00f5": 550, "\u00f6": 446, "\u00f8": 550, "\u00fa": 446, "\u00fc": 526, "\u2014": 1025, "\u2018": 655, "\u2019": 296, "\u201a": 374, "\u201c": 591, "\u201d": 591, "\u201e": 627, "\u2020": 780, "\u2022": 244, "\u2026": 814, "\u2030": 1076, "\u20ac": 684}, supported=new Set(Object.keys(widths));
 // Manual conventions inferred from the user's examples; editable for word-specific choices.
 function width(text,pt){return [...text].reduce((sum,ch)=>sum+((handFont.value==='Handschrift'?handschriftWidths:widths)[ch]??600),0)*pt/1000}
@@ -29,7 +60,7 @@ function worksheetRows(text,pt,repeats,blanks){const rows=[];for(let n=0;n<repea
 const ns='http://www.w3.org/2000/svg';
 function node(tag,attrs,text){const e=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))e.setAttribute(k,v);if(text!==undefined)e.textContent=text;return e}
 function render(){applyPageLayout();const {w:pageWidth,h:pageHeight}=pageDimensions();
- const pt=Math.max(16,Math.min(120,Number(fontSize.value)||26)),text=encoded.value,missing=[...new Set([...text].filter(ch=>!(handFont.value==='Handschrift'?new Set(Object.keys(handschriftWidths)):supported).has(ch)&&!['\n','\r','\t'].includes(ch)))];
+ const pt=Math.max(16,Math.min(120,Number(fontSize.value)||presets.medium)),text=encoded.value,missing=[...new Set([...text].filter(ch=>!(handFont.value==='Handschrift'?new Set(Object.keys(handschriftWidths)):supported).has(ch)&&!['\n','\r','\t'].includes(ch)))];
  warning.textContent=missing.length?'This font has no character for: '+missing.join(' ')+' — replace these characters before printing.':'';
  pages.replaceChildren();if(!text.trim()){status.textContent='Add text to create a worksheet.';printButton.disabled=true;return}
  const repeats=Math.max(1,Math.min(100,Math.round(Number(repeatCount.value)||1))),blanks=Number(blankGuides.value),lines=worksheetRows(text,pt,repeats,blanks),step=pt*(handFont.value==='Handschrift'?1.25:1.6),firstBaseline=84+pt*(handFont.value==='Handschrift'?.6:.8),perPage=Math.max(1,Math.floor((pageHeight-24-pt*.55-firstBaseline)/step+1e-9)+1);
@@ -48,7 +79,7 @@ svg.append(node('text',{x:writingStart(pt),y:baseline,'font-family':handFont.val
 }
 repeatCount.addEventListener('input',render);repeatCount.addEventListener('change',()=>{repeatCount.value=Math.max(1,Math.min(100,Math.round(Number(repeatCount.value)||1)));render()});blankGuides.addEventListener('change',render);
 source.addEventListener('input',()=>{encoded.value=handwritingConvert(source.value);render()});encoded.addEventListener('input',render);size.addEventListener('change',()=>{document.getElementById('custom-size').hidden=size.value!=='custom';if(size.value==='custom'){fontSize.focus();return}fontSize.value=presets[size.value];render()});
-function updateSize(value){const pt=Math.max(16,Math.min(120,Math.round(Number(value)||26)));fontSize.value=pt;size.value='custom';render()}
+function updateSize(value){const pt=Math.max(16,Math.min(120,Math.round(Number(value)||presets.medium)));fontSize.value=pt;size.value='custom';render()}
 fontSize.addEventListener('input',()=>{if(fontSize.value&&Number(fontSize.value)>=16&&Number(fontSize.value)<=120)updateSize(fontSize.value)});fontSize.addEventListener('change',()=>updateSize(fontSize.value));printButton.addEventListener('click',downloadWorksheetPDF);
 document.fonts.load('26px Hand').then(()=>{encoded.value=handwritingConvert(source.value);render()}).catch(()=>{status.textContent='The handwriting font could not load. Reopen the file in Edge or Chrome.'});
 async function exportHandwritingPages(){

@@ -50,6 +50,25 @@
     html[data-bs-theme="dark"] .bibel-grid[data-section="ap"] { --tile: #3e362e; }
     html[data-bs-theme="dark"] .bibel-grid[data-section="nt"] { --tile: #3b3445; }
     #bible-picker-back { margin-bottom: 14px; }
+    .bibel-projector { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; overflow: hidden; }
+    .bibel-projector { --gw-surface: #fff; --gw-text: #17201d; --gw-border: #cad4cf; --gw-control-border: #8c9b95; --gw-hover: #eef3f0; --gw-muted: #52635b; background: var(--gw-surface); color: var(--gw-text); color-scheme: light; }
+    .bibel-projector-shell { display: grid; grid-template-rows: auto minmax(0, 1fr); width: 100%; height: 100%; background: inherit; }
+    .bibel-projector-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px clamp(12px, 3vw, 32px); border-bottom: 1px solid var(--gw-border); }
+    .bibel-projector-tools .btn { padding-inline: 12px; }
+    .bibel-projector-tools form { margin-inline-start: auto; }
+    .bibel-projector-size { display: flex; align-items: center; gap: 8px; }
+    .bibel-projector .bibel-projector-size label { margin: 0; }
+    .bibel-projector-size input { width: clamp(100px, 16vw, 180px); accent-color: #28644a; }
+    .bibel-projector-size output { min-width: 4ch; font-variant-numeric: tabular-nums; }
+    .bibel-projector-stage { display: flex; overflow: auto; padding: clamp(16px, 5vw, 76px); }
+    .bibel-projection-content { width: 100%; max-width: 1400px; margin: auto; }
+    .bibel-projector .bibel-projector-reference { font: 600 clamp(18px, 2vw, 28px) system-ui, sans-serif; color: var(--gw-muted); margin: 0 0 .75em; }
+    .bibel-projector-text { font: var(--projection-size, 56px)/1.38 Arial, sans-serif; overflow-wrap: anywhere; }
+    .bibel-projector[data-font="fraktur"] .bibel-projector-text { font-family: Fraktur, serif; }
+    .bibel-projector[data-font="hand"] .bibel-projector-text { font-family: Hand, cursive; line-height: 1.45; }
+    .bibel-projector[data-font="handschrift"] .bibel-projector-text { font-family: Handschrift, cursive; line-height: 1.45; }
+    #bible-projector-status { margin-top: .75em; }
+    #bible-projector-status:empty { display: none; }
   </style>
 </head>
 <body>
@@ -80,6 +99,7 @@
         <button class="btn btn-outline-secondary" type="button" id="bible-copy">Copy text</button>
         <button class="btn btn-primary primary" type="button" id="bible-worksheet">Writing worksheet</button>
         <button class="btn btn-outline-secondary" type="button" id="bible-converter">Open in Text Converter</button>
+        <button class="btn btn-outline-secondary" type="button" id="bible-project" aria-haspopup="dialog">Project verse</button>
         <span id="bible-selection-status" role="status"></span>
       </div>
     </article>
@@ -105,15 +125,37 @@
         </div>
       </div>
     </dialog>
+    <dialog id="bible-projector" class="bibel-projector" aria-label="Bible projector">
+      <div id="bible-projector-shell" class="bibel-projector-shell">
+        <header class="bibel-projector-tools">
+          <button type="button" id="bible-projector-back" aria-label="Back one verse">← Back</button>
+          <button type="button" class="primary" id="bible-projector-next" aria-label="Next verse">Next →</button>
+          <div class="bibel-projector-size">
+            <label for="bible-projector-size">Text size</label>
+            <input id="bible-projector-size" class="form-range" type="range" min="24" max="160" value="56">
+            <output id="bible-projector-size-value" for="bible-projector-size">56 px</output>
+          </div>
+          <button type="button" id="bible-projector-fullscreen" hidden>Full screen</button>
+          <form method="dialog"><button type="submit">Exit projector</button></form>
+        </header>
+        <div id="bible-projector-stage" class="bibel-projector-stage" tabindex="0" aria-label="Projected verse">
+          <div class="bibel-projection-content">
+            <h2 id="bible-projector-reference" class="bibel-projector-reference" lang="de" aria-live="polite"></h2>
+            <div id="bible-projector-text" class="bibel-projector-text" lang="de"></div>
+            <div id="bible-projector-status" role="status"></div>
+          </div>
+        </div>
+      </div>
+    </dialog>
   </section>
 </main>
 <script src="assets/generated/bible-catalog.625f90aced90.js"></script>
 <script src="assets/generated/font-conversion.2e03f68842de.js"></script>
-<script src="assets/generated/settings.b976f6264ce7.js"></script>
-<script src="assets/generated/bible-reader.86415273b5b2.js"></script>
+<script src="assets/generated/settings.f338bba8fd5b.js"></script>
+<script src="assets/generated/bible-reader.f6424c24ad9c.js"></script>
 <script src="assets/generated/app-shell.bc403873a838.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.b0060756cb9a.js"></script>
+<script src="assets/generated/version.7c6282364d76.js"></script>
 <script src="assets/generated/update-check.3c11939acad8.js"></script>
 </body>
 </html>

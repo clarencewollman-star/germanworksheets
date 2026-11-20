@@ -12,6 +12,18 @@
  const copyButton = document.getElementById('bible-copy');
  const worksheetButton = document.getElementById('bible-worksheet');
  const converterButton = document.getElementById('bible-converter');
+ const projectButton = document.getElementById('bible-project');
+ const projector = document.getElementById('bible-projector');
+ const projectorShell = document.getElementById('bible-projector-shell');
+ const projectorStage = document.getElementById('bible-projector-stage');
+ const projectorReference = document.getElementById('bible-projector-reference');
+ const projectorText = document.getElementById('bible-projector-text');
+ const projectorStatus = document.getElementById('bible-projector-status');
+ const projectorBack = document.getElementById('bible-projector-back');
+ const projectorNext = document.getElementById('bible-projector-next');
+ const projectorSize = document.getElementById('bible-projector-size');
+ const projectorSizeValue = document.getElementById('bible-projector-size-value');
+ const fullscreenButton = document.getElementById('bible-projector-fullscreen');
  const selectionActions = document.getElementById('bible-selection-actions');
  const selectionStatus = document.getElementById('bible-selection-status');
  const status = document.getElementById('bible-status');
@@ -29,7 +41,10 @@
  let request = 0;
  let verseRows = [];
  let selectedPassage = '';
+ let selectedVerseIndex;
  let verseSelected = false;
+ let projection;
+ let readerRange;
 
  const scriptGlyphs = {'#':'', '$':'', '<':'sch', '`':'ch', '¤':'ck', 'µ':'tt', '{':'ff', '\\':'ll', '~':'tz'};
  const frakturGlyphs = {'¡':'ch', '¿':'ck', '|':'tz'};
@@ -49,19 +64,19 @@
   return offsets;
  }
 
- function readPassage(selection) {
-  if (!selection || selection.isCollapsed || !selection.rangeCount) return '';
+ function readSelection(selection) {
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return [];
   const range = selection.getRangeAt(0);
-  if (!range.intersectsNode(verses)) return '';
+  if (!range.intersectsNode(verses)) return [];
   const rows = [];
-  for (const { node, text, offsets, number } of verseRows) {
+  for (const [index, {node, text, offsets, number}] of verseRows.entries()) {
    if (!range.intersectsNode(node)) continue;
    const start = range.startContainer === node ? range.startOffset : 0;
    const end = range.endContainer === node ? range.endOffset : node.length;
    const line = text.slice(offsets ? offsets[start] : start, offsets ? offsets[end] : end);
-   if (line.trim()) rows.push({number, text: line});
+   if (line.trim()) rows.push({index, number, text: line});
   }
-  return formatPassage(rows);
+  return rows;
  }
 
  function formatPassage(rows) {
@@ -73,7 +88,9 @@
   return [...rows.map(row => row.text), reference].join('\n');
  }
 
- function updateSelection(text) {
+ function updateSelection(rows) {
+  selectedVerseIndex = rows[0]?.index;
+  const text = formatPassage(rows);
   if (!text) verseSelected = false;
   if (text === selectedPassage) return;
   selectedPassage = text;
@@ -82,10 +99,10 @@
  }
 
  document.addEventListener('selectionchange', () => {
-  updateSelection(readPassage(window.getSelection()));
+  updateSelection(readSelection(window.getSelection()));
  });
 
- for (const button of [copyButton, worksheetButton, converterButton]) {
+ for (const button of [copyButton, worksheetButton, converterButton, projectButton]) {
   button.addEventListener('pointerdown', event => {
    // Keep the browser's text selection when using one of its actions.
    if (selectedPassage) event.preventDefault();
@@ -95,7 +112,7 @@
  document.addEventListener('copy', event => {
   const selection = window.getSelection();
   const withinPassage = verses.contains(selection?.anchorNode) && verses.contains(selection?.focusNode);
-  const passage = withinPassage ? readPassage(selection) : '';
+  const passage = withinPassage ? formatPassage(readSelection(selection)) : '';
   if (!passage || !event.clipboardData) return;
   event.clipboardData.setData('text/plain', passage);
   event.preventDefault();
@@ -107,7 +124,7 @@
   selection.removeAllRanges();
   selection.addRange(range);
   verseSelected = true;
-  updateSelection(readPassage(selection));
+  updateSelection(readSelection(selection));
  }
 
  verses.addEventListener('pointerdown', event => {
@@ -238,14 +255,149 @@
   return loading;
  }
 
- function chapterTarget(delta) {
-  const chapterIndex = currentBook.chapters.indexOf(currentChapter);
-  const sameBook = currentBook.chapters[chapterIndex + delta];
-  if (sameBook) return [currentBook.id, sameBook];
-  const other = ordered[ordered.indexOf(currentBook) + delta];
+ function chapterTarget(book, chapter, delta) {
+  const chapterIndex = book.chapters.indexOf(chapter);
+  const sameBook = book.chapters[chapterIndex + delta];
+  if (sameBook) return [book, sameBook];
+  const other = ordered[ordered.indexOf(book) + delta];
   if (!other) return null;
-  return [other.id, delta < 0 ? other.chapters.at(-1) : other.chapters[0]];
+  return [other, delta < 0 ? other.chapters.at(-1) : other.chapters[0]];
  }
+
+ function verseText(source) {
+  return source.replace(/[»«]/g, '').normalize('NFC');
+ }
+
+ function appendVerseText(container, text, node) {
+  if (node.data === text) {
+   container.append(node);
+   return;
+  }
+  const printed = document.createElement('span');
+  printed.setAttribute('aria-hidden', 'true');
+  printed.append(node);
+  const spoken = document.createElement('span');
+  spoken.className = 'visually-hidden';
+  spoken.textContent = text;
+  container.append(printed, spoken);
+ }
+
+ function updateProjectionButtons() {
+  const {book, chapter, index, rows, loading} = projection;
+  projectorBack.disabled = Boolean(loading || (index === 0 && !chapterTarget(book, chapter, -1)));
+  projectorNext.disabled = Boolean(loading || (index === rows.length - 1 && !chapterTarget(book, chapter, 1)));
+ }
+
+ function renderProjection() {
+  const {book, chapter, index, rows} = projection;
+  const [number, source] = rows[index];
+  const text = verseText(source);
+  const encode = encoders[projector.dataset.font];
+  projectorReference.textContent = book.name + ' ' + chapter + ':' + number;
+  projectorText.replaceChildren();
+  appendVerseText(projectorText, text, document.createTextNode(encode ? encode(text) : text));
+  projectorStatus.textContent = '';
+  projectorStage.scrollTop = 0;
+  updateProjectionButtons();
+ }
+
+ function updateProjectionSize() {
+  const value = projectorSize.value + ' px';
+  projector.style.setProperty('--projection-size', projectorSize.value + 'px');
+  projectorSizeValue.value = value;
+ }
+
+ projectorSize.addEventListener('input', updateProjectionSize);
+ projectorSize.addEventListener('change', updateProjectionSize);
+ projectorSize.addEventListener('pointerup', () => projectorStage.focus({preventScroll: true}));
+
+ projectButton.addEventListener('click', () => {
+  const rows = books.get(currentBook.id)?.[currentChapter];
+  if (!rows?.[selectedVerseIndex] || projector.open) return;
+  const selection = window.getSelection();
+  readerRange = selection.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
+  projection = {book: currentBook, chapter: currentChapter, index: selectedVerseIndex, rows};
+  projector.dataset.font = font.value;
+  updateProjectionSize();
+  renderProjection();
+  projector.showModal();
+  projectorStage.focus({preventScroll: true});
+ });
+
+ async function stepProjection(delta) {
+  if (!projection || projection.loading) return;
+  const {book, chapter, index, rows} = projection;
+  const nextIndex = index + delta;
+  if (rows[nextIndex]) {
+   projection.index = nextIndex;
+   renderProjection();
+   return;
+  }
+  const target = chapterTarget(book, chapter, delta);
+  if (!target) return;
+  const [targetBook, targetChapter] = target;
+  const waiting = projection;
+  waiting.loading = true;
+  updateProjectionButtons();
+  try {
+   const chapters = await loadBook(targetBook.id);
+   if (projection !== waiting || !projector.open) return;
+   const targetRows = chapters[targetChapter];
+   projection = {book: targetBook, chapter: targetChapter, index: delta < 0 ? targetRows.length - 1 : 0, rows: targetRows};
+   renderProjection();
+  } catch {
+   if (projection !== waiting || !projector.open) return;
+   waiting.loading = false;
+   updateProjectionButtons();
+   projectorStatus.textContent = 'Could not load the next passage. Try again.';
+  }
+ }
+
+ for (const [button, delta] of [[projectorBack, -1], [projectorNext, 1]]) {
+  button.addEventListener('click', event => {
+   if (event.detail > 0) projectorStage.focus({preventScroll: true});
+   stepProjection(delta);
+  });
+ }
+ projector.addEventListener('keydown', event => {
+  if (event.altKey || event.ctrlKey || event.metaKey) return;
+  const key = event.key && event.key !== 'Unidentified' ? event.key : event.code;
+  const paging = key === 'PageUp' || key === 'PageDown';
+  if (!paging && event.target.closest('input')) return;
+  const backward = key === 'ArrowLeft' || key === 'PageUp';
+  const forward = key === 'ArrowRight' || key === 'PageDown'
+   || ((key === ' ' || key === 'Space') && !event.target.closest('button'));
+  if (!backward && !forward) return;
+  event.preventDefault();
+  if (!event.repeat) stepProjection(backward ? -1 : 1);
+ });
+
+ fullscreenButton.hidden = !document.fullscreenEnabled || !projectorShell.requestFullscreen;
+ fullscreenButton.addEventListener('click', async () => {
+  try {
+   if (document.fullscreenElement === projectorShell) await document.exitFullscreen();
+   else await projectorShell.requestFullscreen();
+  } catch {
+   projectorStatus.textContent = 'Could not change full screen mode.';
+  } finally {
+   if (projector.open) projectorStage.focus({preventScroll: true});
+  }
+ });
+ document.addEventListener('fullscreenchange', () => {
+  fullscreenButton.textContent = document.fullscreenElement === projectorShell ? 'Leave full screen' : 'Full screen';
+ });
+ projector.addEventListener('close', () => {
+  projection = null;
+  if (document.fullscreenElement === projectorShell) document.exitFullscreen().catch(() => {});
+  if (readerRange && verses.contains(readerRange.startContainer) && verses.contains(readerRange.endContainer)) {
+   const selection = window.getSelection();
+   selection.removeAllRanges();
+   selection.addRange(readerRange);
+   updateSelection(readSelection(selection));
+   projectButton.focus({preventScroll: true});
+  }
+  readerRange = null;
+ });
 
  async function render() {
   const revision = ++request;
@@ -255,20 +407,20 @@
   heading.textContent = book.name + ' ' + chapter;
   locationButton.textContent = heading.textContent + ' ▾';
   locationButton.lang = 'de';
-  previous.disabled = !chapterTarget(-1);
-  next.disabled = !chapterTarget(1);
+  previous.disabled = !chapterTarget(book, chapter, -1);
+  next.disabled = !chapterTarget(book, chapter, 1);
   verses.dataset.font = font.value;
   status.hidden = books.has(book.id);
   status.textContent = 'Loading chapter…';
   verses.replaceChildren();
   verseRows = [];
-  updateSelection('');
+  updateSelection([]);
   try {
    const chapters = await loadBook(book.id);
    if (revision !== request) return;
    const fragment = document.createDocumentFragment();
    for (const [number, sourceText] of chapters[chapter]) {
-    const text = sourceText.replace(/[»«]/g, '').normalize('NFC');
+    const text = verseText(sourceText);
     const display = encode ? encode(text) : text;
     const row = document.createElement('p');
     row.lang = 'de';
@@ -282,15 +434,7 @@
     numberLabel.append(verseNumber);
     const node = document.createTextNode(display);
     row.append(numberLabel, ' ');
-    if (encode) {
-     const printed = document.createElement('span');
-     printed.setAttribute('aria-hidden', 'true');
-     printed.append(node);
-     const spoken = document.createElement('span');
-     spoken.className = 'visually-hidden';
-     spoken.textContent = text;
-     row.append(printed, spoken);
-    } else row.append(node);
+    appendVerseText(row, text, node);
     const offsets = encode ? sourceOffsets(text, display, font.value === 'fraktur' ? frakturGlyphs : scriptGlyphs) : null;
     verseRows.push({number, node, text, offsets});
     row.addEventListener('click', event => {
@@ -328,9 +472,9 @@
 
  font.addEventListener('change', render);
  function step(delta) {
-  const target = chapterTarget(delta);
+  const target = chapterTarget(currentBook, currentChapter, delta);
   if (target) {
-   navigate(...target);
+   navigate(target[0].id, target[1]);
    heading.focus();
   }
  }

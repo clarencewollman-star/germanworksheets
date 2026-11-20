@@ -5,7 +5,7 @@
  const controls=[...document.querySelectorAll('select[id],input[id],textarea[id]')].filter(el=>
   el.tagName==='SELECT'||['number','checkbox','radio','range','color'].includes(el.type)||
   (el.tagName==='TEXTAREA'&&!embedded&&!['encoded','output'].includes(el.id))
- ).filter(el=>!(embedded&&['orientation','verse-mode'].includes(el.id)));
+ ).filter(el=>!el.id.startsWith('preset-') && !(embedded&&['orientation','verse-mode'].includes(el.id)));
  let saved={};try{const value=JSON.parse(localStorage.getItem(key)||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))saved=value}catch{}
  if(document.getElementById('font-style') && !document.getElementById('script-font') && saved['script-font']){
   if(saved['font-style']==='script' && ['Hand','Handschrift'].includes(saved['script-font'])) saved['font-style']=saved['script-font'];
@@ -30,8 +30,8 @@
   if(el.type==='number'&&(!el.value||!el.validity.valid))return;
   saved[el.id]=(el.type==='checkbox'||el.type==='radio')?el.checked:el.value;
   // These controls update one another; retain their resulting state together.
-  if(['size','font-size','preset-small','preset-medium','preset-large'].includes(el.id)){
-   for(const related of controls.filter(c=>['size','font-size','preset-small','preset-medium','preset-large'].includes(c.id)))saved[related.id]=related.value;
+  if(['size','font-size'].includes(el.id)){
+   for(const related of controls.filter(c=>['size','font-size'].includes(c.id)))saved[related.id]=related.value;
   }
   try{localStorage.setItem(key,JSON.stringify(saved))}catch{}
  }
@@ -43,7 +43,6 @@
    // then notify their existing handlers to update previews and visibility.
    const restored=controls.filter(restore);
    for(const el of restored){
-    if(el.id.startsWith('preset-'))continue;
     if(el.id==='font-size'&&document.getElementById('size')?.value!=='custom')continue;
     el.dispatchEvent(new Event(el.tagName==='TEXTAREA'?'input':'change',{bubbles:true}));
    }

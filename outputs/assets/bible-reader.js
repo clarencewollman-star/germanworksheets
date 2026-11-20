@@ -12,6 +12,7 @@
  const copyButton = document.getElementById('bible-copy');
  const worksheetButton = document.getElementById('bible-worksheet');
  const converterButton = document.getElementById('bible-converter');
+ const selectionActions = document.getElementById('bible-selection-actions');
  const selectionStatus = document.getElementById('bible-selection-status');
  const status = document.getElementById('bible-status');
  const previous = document.getElementById('bible-prev');
@@ -27,8 +28,8 @@
  let lastBookButton;
  let request = 0;
  let verseRows = [];
- let selectedVerse = null;
- let mouseText = '';
+ let selectedPassage = '';
+ let verseSelected = false;
 
  const scriptGlyphs = {'#':'', '$':'', '<':'sch', '`':'ch', '¤':'ck', 'µ':'tt', '{':'ff', '\\':'ll', '~':'tz'};
  const frakturGlyphs = {'¡':'ch', '¿':'ck', '|':'tz'};
@@ -48,7 +49,7 @@
   return offsets;
  }
 
- function readMouseSelection(selection) {
+ function readPassage(selection) {
   if (!selection || selection.isCollapsed || !selection.rangeCount) return '';
   const range = selection.getRangeAt(0);
   if (!range.intersectsNode(verses)) return '';
@@ -72,60 +73,52 @@
   return [...rows.map(row => row.text), reference].join('\n');
  }
 
- function selectedText() {
-  return mouseText || (selectedVerse ? formatPassage([selectedVerse]) : '');
- }
-
- function updateSelection() {
-  for (const verse of verseRows) {
-   const active = verse === selectedVerse;
-   verse.row.classList.toggle('bibel-selected-verse', active);
-   verse.button.setAttribute('aria-pressed', String(active));
-  }
-  const hasSelection = Boolean(mouseText || selectedVerse);
-  copyButton.disabled = worksheetButton.disabled = converterButton.disabled = !hasSelection;
-  let message = '';
-  if (mouseText) message = 'Text selected.';
-  else if (selectedVerse) message = 'Verse ' + selectedVerse.number + ' selected.';
-  if (message !== selectionStatus.textContent) selectionStatus.textContent = message;
- }
-
- function selectVerse(verse) {
-  window.getSelection().removeAllRanges();
-  mouseText = '';
-  selectedVerse = verse;
-  verse.button.focus({preventScroll: true});
-  updateSelection();
+ function updateSelection(text) {
+  if (!text) verseSelected = false;
+  if (text === selectedPassage) return;
+  selectedPassage = text;
+  selectionActions.hidden = !text;
+  selectionStatus.textContent = '';
  }
 
  document.addEventListener('selectionchange', () => {
-  const text = readMouseSelection(window.getSelection());
-  if (text === mouseText) return;
-  mouseText = text;
-  if (mouseText) selectedVerse = null;
-  updateSelection();
+  updateSelection(readPassage(window.getSelection()));
  });
 
  for (const button of [copyButton, worksheetButton, converterButton]) {
   button.addEventListener('pointerdown', event => {
    // Keep the browser's text selection when using one of its actions.
-   if (mouseText) event.preventDefault();
+   if (selectedPassage) event.preventDefault();
   });
  }
 
  document.addEventListener('copy', event => {
   const selection = window.getSelection();
   const withinPassage = verses.contains(selection?.anchorNode) && verses.contains(selection?.focusNode);
-  const text = withinPassage ? readMouseSelection(selection) : '';
-  const focusedVerse = document.activeElement?.classList.contains('bibel-verse-number');
-  const passage = text || (focusedVerse && selection?.isCollapsed ? selectedText() : '');
+  const passage = withinPassage ? readPassage(selection) : '';
   if (!passage || !event.clipboardData) return;
   event.clipboardData.setData('text/plain', passage);
   event.preventDefault();
  });
 
+ function selectVerse(node, selection) {
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  verseSelected = true;
+  updateSelection(readPassage(selection));
+ }
+
+ verses.addEventListener('pointerdown', event => {
+  // Dragging from a click-selected verse should start a new text highlight.
+  if (!verseSelected || event.button !== 0 || event.shiftKey) return;
+  window.getSelection().removeAllRanges();
+  verseSelected = false;
+ });
+
  copyButton.addEventListener('click', async () => {
-  const text = selectedText();
+  const text = selectedPassage;
   if (!text) return;
   const revision = request;
   try {
@@ -152,12 +145,11 @@
     return;
    }
   }
-  if (revision === request && text === selectedText()) selectionStatus.textContent = 'Text copied.';
+  if (revision === request && text === selectedPassage) selectionStatus.textContent = 'Text copied.';
  });
 
  function openTool(page) {
-  const text = selectedText();
-  if (text) location.assign(page + '#bible-text=' + encodeURIComponent(text));
+  if (selectedPassage) location.assign(page + '#bible-text=' + encodeURIComponent(selectedPassage));
  }
  worksheetButton.addEventListener('click', () => openTool('handwriting-worksheet-generator.html'));
  converterButton.addEventListener('click', () => openTool('text-converter.html'));
@@ -270,9 +262,7 @@
   status.textContent = 'Loading chapter…';
   verses.replaceChildren();
   verseRows = [];
-  selectedVerse = null;
-  mouseText = '';
-  updateSelection();
+  updateSelection('');
   try {
    const chapters = await loadBook(book.id);
    if (revision !== request) return;
@@ -282,15 +272,16 @@
     const display = encode ? encode(text) : text;
     const row = document.createElement('p');
     row.lang = 'de';
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'bibel-verse-number';
-    button.lang = 'en';
-    button.textContent = number;
-    button.setAttribute('aria-label', 'Verse ' + number);
-    button.setAttribute('aria-pressed', 'false');
+    const numberLabel = document.createElement('sup');
+    const verseNumber = document.createElement('button');
+    verseNumber.type = 'button';
+    verseNumber.className = 'bibel-verse-number';
+    verseNumber.textContent = number;
+    verseNumber.lang = 'en';
+    verseNumber.setAttribute('aria-label', 'Select verse ' + number);
+    numberLabel.append(verseNumber);
     const node = document.createTextNode(display);
-    row.append(button, ' ');
+    row.append(numberLabel, ' ');
     if (encode) {
      const printed = document.createElement('span');
      printed.setAttribute('aria-hidden', 'true');
@@ -301,11 +292,11 @@
      row.append(printed, spoken);
     } else row.append(node);
     const offsets = encode ? sourceOffsets(text, display, font.value === 'fraktur' ? frakturGlyphs : scriptGlyphs) : null;
-    const verse = {number, row, button, node, text, offsets};
+    verseRows.push({number, node, text, offsets});
     row.addEventListener('click', event => {
-     if (event.target === button || window.getSelection().isCollapsed) selectVerse(verse);
+     const selection = window.getSelection();
+     if (event.target === verseNumber || selection.isCollapsed) selectVerse(node, selection);
     });
-    verseRows.push(verse);
     fragment.append(row);
    }
    verses.replaceChildren(fragment);

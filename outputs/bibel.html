@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Lutherbibel 1912 · German Worksheets</title>
+  <title>Luther Bible 1912 · German Worksheets</title>
   <script src="assets/generated/theme.83c90c9eba70.js"></script>
   <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
-  <link rel="stylesheet" href="assets/generated/app-theme.ef9188bfb49f.css">
+  <link rel="stylesheet" href="assets/generated/app-theme.d205628dde68.css">
   <link rel="stylesheet" href="assets/generated/fonts.66af5ca7de04.css">
   <style>
     .bibel-reader { max-width: 54rem; }
@@ -16,11 +16,18 @@
     .bibel-controls > div { max-width: 100%; }
     .bibel-controls select { max-width: 100%; }
     .bibel-chapter h2 { margin: 24px 0 16px; }
+    .bibel-selection-hint { font-size: .9rem; margin-bottom: 0; }
+    .bibel-selection-actions { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; margin-bottom: 8px; background: var(--gw-surface, var(--bs-body-bg)); }
+    .bibel-selection-actions .btn { padding-inline: 10px; }
+    #bible-selection-status { flex-basis: 100%; font-size: .85rem; }
+    #bible-selection-status:empty { display: none; }
     .bibel-verses p { font: 1.16rem/1.7 Arial, sans-serif; color: inherit; margin: 0 0 .65em; }
     .bibel-verses[data-font="fraktur"] p { font-family: Fraktur, serif; font-size: 1.4rem; }
     .bibel-verses[data-font="hand"] p { font-family: Hand, cursive; font-size: 1.5rem; }
     .bibel-verses[data-font="handschrift"] p { font-family: Handschrift, cursive; font-size: 1.5rem; }
-    .bibel-verses sup { font: 600 .72rem Arial, sans-serif; opacity: .74; margin-right: .4rem; }
+    .bibel-verses .bibel-verse-number { font: 600 .8rem Arial, sans-serif; vertical-align: super; min-width: 26px; min-height: 24px; padding: 0 4px; border: 1px solid transparent; border-radius: 4px; color: inherit; background: transparent; cursor: pointer; user-select: none; }
+    .bibel-verses .bibel-verse-number:is(:hover, [aria-pressed="true"]) { border-color: var(--bibel-accent, var(--bs-primary)); }
+    .bibel-verses .bibel-selected-verse { background: var(--bibel-selection, color-mix(in srgb, var(--bs-primary) 18%, transparent)); border-radius: 4px; }
     .bibel-verses .visually-hidden { user-select: none; }
     .bibel-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
     .bibel-source { margin-top: 24px; border-top: 1px solid var(--bs-border-color); }
@@ -36,24 +43,30 @@
     .bibel-grid[data-section] { --tile: #e3eee5; }
     .bibel-grid[data-section="ap"] { --tile: #f3e8cd; }
     .bibel-grid[data-section="nt"] { --tile: #ddeaf3; }
-    html[data-bs-theme] .gw-ui .bibel-grid[data-section] .btn { background: var(--tile); color: #21342c; border-color: #26352f26; }
-    html[data-bs-theme] .gw-ui .bibel-grid[data-section] .btn:hover { background: color-mix(in srgb, var(--tile) 88%, #28644a); border-color: #28644a; }
-    .bibel-grid .btn[aria-current="true"] { box-shadow: inset 0 0 0 2px #28644a; }
+    html[data-bs-theme] .gw-ui .bibel-grid[data-section] .btn { background: var(--tile); color: var(--bibel-tile-text, #21342c); border-color: var(--bibel-tile-border, #26352f26); }
+    html[data-bs-theme] .gw-ui .bibel-grid[data-section] .btn:hover { background: color-mix(in srgb, var(--tile) 88%, var(--bibel-accent, #28644a)); border-color: var(--bibel-accent, #28644a); }
+    .bibel-grid .btn[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--bibel-accent, #28644a); }
+    html[data-bs-theme="dark"] .bibel-reader { --bibel-accent: var(--gw-link); --bibel-selection: var(--gw-active); }
+    html[data-bs-theme="dark"] .bibel-picker { --bs-body-bg: var(--gw-surface); --bs-body-color: var(--gw-text); --bs-border-color: var(--gw-border); --bibel-tile-text: var(--gw-text); --bibel-tile-border: var(--gw-border); }
+    html[data-bs-theme="dark"] .bibel-picker::backdrop { background: #000b; }
+    html[data-bs-theme="dark"] .bibel-grid[data-section="ot"] { --tile: #303846; }
+    html[data-bs-theme="dark"] .bibel-grid[data-section="ap"] { --tile: #3e362e; }
+    html[data-bs-theme="dark"] .bibel-grid[data-section="nt"] { --tile: #3b3445; }
     #bible-picker-back { margin-bottom: 14px; }
   </style>
 </head>
 <body>
 <main>
   <a href="index.html">← German Worksheets</a>
-  <h1>Lutherbibel 1912</h1>
-  <section class="panel bibel-reader" aria-label="Bibel lesen">
+  <h1>Luther Bible 1912</h1>
+  <section class="panel bibel-reader" aria-label="Bible reader">
     <div class="bibel-controls">
       <div>
-        <label for="bible-location">Buch und Kapitel</label>
-        <button id="bible-location" type="button" aria-haspopup="dialog" aria-controls="bible-picker">Stelle wählen</button>
+        <label for="bible-location">Book and chapter</label>
+        <button id="bible-location" type="button" aria-haspopup="dialog" aria-controls="bible-picker">Choose a passage</button>
       </div>
       <div>
-        <label for="bible-font">Schrift</label>
+        <label for="bible-font">Font</label>
         <select id="bible-font">
           <option value="arial">Arial</option>
           <option value="fraktur">Fraktur</option>
@@ -64,27 +77,34 @@
     </div>
     <p id="bible-status" class="mt-3 mb-0" role="status" hidden></p>
     <article class="bibel-chapter" aria-labelledby="bible-heading">
-      <h2 id="bible-heading" tabindex="-1"></h2>
+      <h2 id="bible-heading" lang="de" tabindex="-1"></h2>
+      <p class="bibel-selection-hint">Click a verse to select it, or drag to highlight a passage.</p>
+      <div class="bibel-selection-actions">
+        <button class="btn btn-outline-secondary" type="button" id="bible-copy" disabled>Copy text</button>
+        <button class="btn btn-primary primary" type="button" id="bible-worksheet" disabled>Writing worksheet</button>
+        <button class="btn btn-outline-secondary" type="button" id="bible-converter" disabled>Open in Text Converter</button>
+        <span id="bible-selection-status" role="status"></span>
+      </div>
       <div id="bible-verses" class="bibel-verses"></div>
     </article>
-    <nav class="bibel-navigation" aria-label="Kapitelnavigation">
-      <button type="button" id="bible-prev">← Voriges Kapitel</button>
-      <button type="button" id="bible-next">Nächstes Kapitel →</button>
+    <nav class="bibel-navigation" aria-label="Chapter navigation">
+      <button type="button" id="bible-prev">← Previous chapter</button>
+      <button type="button" id="bible-next">Next chapter →</button>
     </nav>
     <details class="bibel-source">
-      <summary>Textquelle</summary>
-      <p><a href="https://sourceforge.net/projects/zefania-sharp/files/Bibles/GER/Lutherbibel/Luther%201912%20-%20mit%20Apokryphen/">Luther 1912 mit Apokryphen (Zefania XML, LUTH1912AP)</a>. Der Text und die Verszählung folgen dieser digitalen Ausgabe. Redaktionelle Anmerkungen sind ausgelassen.</p>
-      <p>Die Apokryphen werden noch mit einer gedruckten Ausgabe verglichen. In Sirach 7 kommt die Versnummer 1 in der digitalen Vorlage zweimal vor.</p>
+      <summary>Text source</summary>
+      <p><a href="https://sourceforge.net/projects/zefania-sharp/files/Bibles/GER/Lutherbibel/Luther%201912%20-%20mit%20Apokryphen/">Luther 1912 with Apocrypha (Zefania XML, LUTH1912AP)</a>. The text and verse numbers follow this digital edition, with editorial notes omitted.</p>
+      <p>The Apocrypha are still being checked against a printed edition. In Sirach 7, verse number 1 appears twice in the digital source.</p>
     </details>
     <dialog id="bible-picker" class="bibel-picker" aria-labelledby="bible-picker-title">
       <header class="bibel-picker-header">
-        <h2 id="bible-picker-title" tabindex="-1">Buch wählen</h2>
-        <form method="dialog"><button type="submit" aria-label="Auswahl schließen">✕</button></form>
+        <h2 id="bible-picker-title" tabindex="-1">Choose a book</h2>
+        <form method="dialog"><button type="submit" aria-label="Close book and chapter picker">✕</button></form>
       </header>
       <div class="bibel-picker-content">
         <div id="bible-book-grid"></div>
         <div id="bible-chapter-panel" hidden>
-          <button type="button" id="bible-picker-back">← Alle Bücher</button>
+          <button type="button" id="bible-picker-back">← All books</button>
           <div id="bible-chapter-grid" class="bibel-grid"></div>
         </div>
       </div>
@@ -94,10 +114,10 @@
 <script src="assets/generated/bible-catalog.625f90aced90.js"></script>
 <script src="assets/generated/font-conversion.2e03f68842de.js"></script>
 <script src="assets/generated/settings.b976f6264ce7.js"></script>
-<script src="assets/generated/bible-reader.c9dfb8d91bd4.js"></script>
+<script src="assets/generated/bible-reader.b3bd0b48648e.js"></script>
 <script src="assets/generated/app-shell.bc403873a838.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.e6cdbb6bf0af.js"></script>
+<script src="assets/generated/version.d12d348bf111.js"></script>
 <script src="assets/generated/update-check.3c11939acad8.js"></script>
 </body>
 </html>

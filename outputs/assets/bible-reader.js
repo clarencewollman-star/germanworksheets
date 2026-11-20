@@ -9,19 +9,158 @@
  const encoders = {fraktur: convertFraktur, hand: convert, handschrift: convertHandschrift};
  const heading = document.getElementById('bible-heading');
  const verses = document.getElementById('bible-verses');
+ const copyButton = document.getElementById('bible-copy');
+ const worksheetButton = document.getElementById('bible-worksheet');
+ const converterButton = document.getElementById('bible-converter');
+ const selectionStatus = document.getElementById('bible-selection-status');
  const status = document.getElementById('bible-status');
  const previous = document.getElementById('bible-prev');
  const next = document.getElementById('bible-next');
  const books = new Map();
  window.luther1912Books = books;
  const pending = new Map();
- const sections = {ot:'Altes Testament', ap:'Apokryphen', nt:'Neues Testament'};
+ const sections = {ot:'Old Testament', ap:'Apocrypha', nt:'New Testament'};
  const ordered = [];
  const bookButtons = new Map();
  let currentBook;
  let currentChapter;
  let lastBookButton;
  let request = 0;
+ let verseRows = [];
+ let selectedVerse = null;
+ let mouseText = '';
+
+ const scriptGlyphs = {'#':'', '$':'', '<':'sch', '`':'ch', '¤':'ck', 'µ':'tt', '{':'ff', '\\':'ll', '~':'tz'};
+ const frakturGlyphs = {'¡':'ch', '¿':'ck', '|':'tz'};
+
+ // Map each displayed caret position back to the original German, including
+ // legacy-font ligatures and joining marks with no corresponding letter.
+ function sourceOffsets(text, display, glyphs) {
+  const offsets = [0];
+  let sourceIndex = 0;
+  for (let i = 0; i < display.length; i++) {
+   const glyph = display[i];
+   const expansion = glyphs[glyph];
+   sourceIndex += expansion !== undefined && glyph !== text[sourceIndex]
+    && text.startsWith(expansion, sourceIndex) ? expansion.length : 1;
+   offsets.push(sourceIndex);
+  }
+  return offsets;
+ }
+
+ function readMouseSelection(selection) {
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return '';
+  const range = selection.getRangeAt(0);
+  if (!range.intersectsNode(verses)) return '';
+  const rows = [];
+  for (const { node, text, offsets, number } of verseRows) {
+   if (!range.intersectsNode(node)) continue;
+   const start = range.startContainer === node ? range.startOffset : 0;
+   const end = range.endContainer === node ? range.endOffset : node.length;
+   const line = text.slice(offsets ? offsets[start] : start, offsets ? offsets[end] : end);
+   if (line.trim()) rows.push({number, text: line});
+  }
+  return formatPassage(rows);
+ }
+
+ function formatPassage(rows) {
+  if (!rows.length) return '';
+  const first = rows[0].number;
+  const last = rows.at(-1).number;
+  const verseRange = first === last ? first : first + '-' + last;
+  const reference = currentBook.name + ' ' + currentChapter + ':' + verseRange;
+  return [...rows.map(row => row.text), reference].join('\n');
+ }
+
+ function selectedText() {
+  return mouseText || (selectedVerse ? formatPassage([selectedVerse]) : '');
+ }
+
+ function updateSelection() {
+  for (const verse of verseRows) {
+   const active = verse === selectedVerse;
+   verse.row.classList.toggle('bibel-selected-verse', active);
+   verse.button.setAttribute('aria-pressed', String(active));
+  }
+  const hasSelection = Boolean(mouseText || selectedVerse);
+  copyButton.disabled = worksheetButton.disabled = converterButton.disabled = !hasSelection;
+  let message = '';
+  if (mouseText) message = 'Text selected.';
+  else if (selectedVerse) message = 'Verse ' + selectedVerse.number + ' selected.';
+  if (message !== selectionStatus.textContent) selectionStatus.textContent = message;
+ }
+
+ function selectVerse(verse) {
+  window.getSelection().removeAllRanges();
+  mouseText = '';
+  selectedVerse = verse;
+  verse.button.focus({preventScroll: true});
+  updateSelection();
+ }
+
+ document.addEventListener('selectionchange', () => {
+  const text = readMouseSelection(window.getSelection());
+  if (text === mouseText) return;
+  mouseText = text;
+  if (mouseText) selectedVerse = null;
+  updateSelection();
+ });
+
+ for (const button of [copyButton, worksheetButton, converterButton]) {
+  button.addEventListener('pointerdown', event => {
+   // Keep the browser's text selection when using one of its actions.
+   if (mouseText) event.preventDefault();
+  });
+ }
+
+ document.addEventListener('copy', event => {
+  const selection = window.getSelection();
+  const withinPassage = verses.contains(selection?.anchorNode) && verses.contains(selection?.focusNode);
+  const text = withinPassage ? readMouseSelection(selection) : '';
+  const focusedVerse = document.activeElement?.classList.contains('bibel-verse-number');
+  const passage = text || (focusedVerse && selection?.isCollapsed ? selectedText() : '');
+  if (!passage || !event.clipboardData) return;
+  event.clipboardData.setData('text/plain', passage);
+  event.preventDefault();
+ });
+
+ copyButton.addEventListener('click', async () => {
+  const text = selectedText();
+  if (!text) return;
+  const revision = request;
+  try {
+   await navigator.clipboard.writeText(text);
+  } catch {
+   const selection = window.getSelection();
+   const range = selection.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
+   const focused = document.activeElement;
+   const field = document.createElement('textarea');
+   field.className = 'visually-hidden';
+   field.value = text;
+   document.body.append(field);
+   field.select();
+   let copied = false;
+   try { copied = document.execCommand('copy'); } catch {}
+   field.remove();
+   focused?.focus({preventScroll: true});
+   if (range && range.startContainer.isConnected) {
+    selection.removeAllRanges();
+    selection.addRange(range);
+   }
+   if (!copied) {
+    selectionStatus.textContent = 'Could not copy the text. Highlight it and use your device’s Copy command.';
+    return;
+   }
+  }
+  if (revision === request && text === selectedText()) selectionStatus.textContent = 'Text copied.';
+ });
+
+ function openTool(page) {
+  const text = selectedText();
+  if (text) location.assign(page + '#bible-text=' + encodeURIComponent(text));
+ }
+ worksheetButton.addEventListener('click', () => openTool('handwriting-worksheet-generator.html'));
+ converterButton.addEventListener('click', () => openTool('text-converter.html'));
 
  function tile(text, label, action) {
   const button = document.createElement('button');
@@ -47,6 +186,7 @@
     showChapterGrid(book);
    });
    button.title = book.name;
+   button.lang = 'de';
    bookButtons.set(book.id, button);
    group.append(button);
   }
@@ -55,7 +195,7 @@
  }
 
  function showBookGrid() {
-  pickerTitle.textContent = 'Buch wählen';
+  pickerTitle.textContent = 'Choose a book';
   bookGrid.hidden = false;
   chapterPanel.hidden = true;
   if (lastBookButton) lastBookButton.focus();
@@ -66,9 +206,9 @@
  }
 
  function showChapterGrid(book) {
-  pickerTitle.textContent = book.name + ' · Kapitel wählen';
+  pickerTitle.textContent = book.name + ' · Choose a chapter';
   chapterGrid.replaceChildren(...book.chapters.map(chapter => {
-   const button = tile(chapter, 'Kapitel ' + chapter, () => {
+   const button = tile(chapter, 'Chapter ' + chapter, () => {
     picker.close();
     navigate(book.id, chapter);
    });
@@ -98,8 +238,8 @@
   const loading = new Promise((resolve, reject) => {
    const script = document.createElement('script');
    script.src = 'assets/bible-1912/' + id + '.js';
-   script.onload = () => books.has(id) ? resolve(books.get(id)) : reject(new Error('Unbekanntes Buch'));
-   script.onerror = () => reject(new Error('Buch konnte nicht geladen werden'));
+   script.onload = () => books.has(id) ? resolve(books.get(id)) : reject(new Error('Unknown book'));
+   script.onerror = () => reject(new Error('Could not load the book'));
    document.head.append(script);
   }).finally(() => pending.delete(id));
   pending.set(id, loading);
@@ -122,38 +262,57 @@
   const encode = encoders[font.value];
   heading.textContent = book.name + ' ' + chapter;
   locationButton.textContent = heading.textContent + ' ▾';
+  locationButton.lang = 'de';
   previous.disabled = !chapterTarget(-1);
   next.disabled = !chapterTarget(1);
   verses.dataset.font = font.value;
   status.hidden = books.has(book.id);
-  status.textContent = 'Kapitel wird geladen …';
+  status.textContent = 'Loading chapter…';
   verses.replaceChildren();
+  verseRows = [];
+  selectedVerse = null;
+  mouseText = '';
+  updateSelection();
   try {
    const chapters = await loadBook(book.id);
    if (revision !== request) return;
    const fragment = document.createDocumentFragment();
    for (const [number, sourceText] of chapters[chapter]) {
-    const text = sourceText.replace(/[»«]/g, '');
+    const text = sourceText.replace(/[»«]/g, '').normalize('NFC');
+    const display = encode ? encode(text) : text;
     const row = document.createElement('p');
-    const label = document.createElement('sup');
-    label.textContent = number;
-    row.append(label, ' ');
+    row.lang = 'de';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'bibel-verse-number';
+    button.lang = 'en';
+    button.textContent = number;
+    button.setAttribute('aria-label', 'Verse ' + number);
+    button.setAttribute('aria-pressed', 'false');
+    const node = document.createTextNode(display);
+    row.append(button, ' ');
     if (encode) {
      const printed = document.createElement('span');
      printed.setAttribute('aria-hidden', 'true');
-     printed.textContent = encode(text);
+     printed.append(node);
      const spoken = document.createElement('span');
      spoken.className = 'visually-hidden';
      spoken.textContent = text;
      row.append(printed, spoken);
-    } else row.append(text);
+    } else row.append(node);
+    const offsets = encode ? sourceOffsets(text, display, font.value === 'fraktur' ? frakturGlyphs : scriptGlyphs) : null;
+    const verse = {number, row, button, node, text, offsets};
+    row.addEventListener('click', event => {
+     if (event.target === button || window.getSelection().isCollapsed) selectVerse(verse);
+    });
+    verseRows.push(verse);
     fragment.append(row);
    }
    verses.replaceChildren(fragment);
    status.hidden = true;
   } catch {
    if (revision !== request) return;
-   status.textContent = 'Kapitel konnte nicht geladen werden. Bitte lade die Seite neu.';
+   status.textContent = 'Could not load the chapter. Please reload the page.';
    status.hidden = false;
   }
  }

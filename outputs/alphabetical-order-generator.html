@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Alphabetical Order · German Worksheets</title>
+  <script src="assets/generated/theme.83c90c9eba70.js"></script>
+  <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
+  <link rel="stylesheet" href="assets/generated/app-theme.d205628dde68.css">
+  <link rel="stylesheet" href="assets/generated/fonts.66af5ca7de04.css">
+  <style>
+    .alphabet-controls, .alphabet-pages { max-width: 52rem; }
+    .alphabet-controls .actions { margin-top: 16px; }
+    #alphabet-status { margin: 12px 0 0; }
+    #alphabet-status:empty { display: none; }
+    .alphabet-page { margin: 0 0 20px; border: 1px solid var(--gw-border); }
+    .alphabet-page svg { display: block; width: 100%; height: auto; }
+    @page { size: letter portrait; margin: 0; }
+    @media print {
+      .alphabet-page { width: 8.5in; height: 11in; margin: 0; border: 0; break-after: page; }
+      .alphabet-page:last-child { break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1 class="screen">Alphabetical Order</h1>
+  <section class="panel screen alphabet-controls">
+    <label for="alphabet-text">Text for the worksheet</label>
+    <textarea id="alphabet-text" rows="5" aria-describedby="alphabet-help" placeholder="Paste German text here"></textarea>
+    <p id="alphabet-help" class="mt-2 mb-0">The worksheet adds one writing line for each different word.</p>
+    <div class="actions">
+      <div>
+        <label for="alphabet-font">Font</label>
+        <select id="alphabet-font">
+          <option value="Arial">Arial (Print)</option>
+          <option value="Fraktur">Fraktur</option>
+          <option value="Hand">BW Hand Schrift</option>
+          <option value="Handschrift">Handschrift</option>
+        </select>
+      </div>
+      <label><input type="checkbox" id="alphabet-key"> Include answer key</label>
+    </div>
+    <div class="actions">
+      <button type="button" id="alphabet-create" class="primary">Create worksheet</button>
+      <button type="button" id="alphabet-save" disabled>Save PDF</button>
+    </div>
+    <p id="alphabet-status" role="status"></p>
+  </section>
+  <section id="alphabet-pages" class="alphabet-pages" aria-label="Worksheet preview"></section>
+</main>
+<script src="assets/generated/font-conversion.2e03f68842de.js"></script>
+<script src="assets/generated/pdf.d5e66aedb03b.js"></script>
+<script src="assets/generated/alphabetical-order.6442a59002d1.js"></script>
+<script src="assets/generated/app-shell.bc403873a838.js"></script>
+<script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
+<script src="assets/generated/version.6671e5019da2.js"></script>
+</body>
+</html>

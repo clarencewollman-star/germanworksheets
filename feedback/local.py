@@ -16,6 +16,13 @@ class LocalHandler(server.Handler, SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith('/api/feedback/'):
             return server.Handler.do_GET(self)
+        if self.path == '/test/':
+            self.send_response(302)
+            self.send_header('Location', '/test')
+            self.end_headers()
+            return
+        if self.path == '/test':
+            self.path = '/test.html'
         if self.path in ('/admin', '/admin/'):
             self.path = '/admin.html'
         return SimpleHTTPRequestHandler.do_GET(self)

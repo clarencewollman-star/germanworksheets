@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Bible Lookup · German Worksheets</title>
+  <script src="assets/generated/theme.83c90c9eba70.js"></script>
+  <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
+  <link rel="stylesheet" href="assets/generated/app-theme.d205628dde68.css">
+  <link rel="stylesheet" href="assets/generated/fonts.66af5ca7de04.css">
+  <style>
+    .lookup-controls, .lookup-review, .lookup-preview { max-width: 52rem; }
+    .lookup-controls .actions { align-items: end; }
+    .lookup-controls fieldset { margin-top: 18px; border: 0; padding: 0; }
+    .lookup-controls legend { font-size: 1rem; font-weight: 600; }
+    .lookup-books { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); gap: 7px 14px; padding: 0 0 8px; }
+    .lookup-books label { display: flex; align-items: baseline; gap: 7px; margin: 0; font-weight: 400; }
+    #lookup-status { margin: 12px 0 0; }
+    #lookup-status:empty { display: none; }
+    .lookup-review ol { padding-left: 1.7rem; margin-bottom: 0; }
+    .lookup-review li + li { border-top: 1px solid var(--gw-border); }
+    .lookup-verse { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; }
+    .lookup-verse p { grid-column: 1; margin: 0; }
+    .lookup-verse button { grid-column: 2; grid-row: 1 / span 2; align-self: start; min-width: 44px; }
+    .lookup-sheet { border: 1px solid var(--gw-border); margin-bottom: 20px; }
+    .lookup-sheet svg { display: block; width: 100%; height: auto; }
+    @page { size: letter portrait; margin: 0; }
+    @media print {
+      .lookup-preview > h2 { display: none; }
+      .lookup-sheet { width: 8.5in; height: 11in; border: 0; margin: 0; break-after: page; }
+      .lookup-sheet:last-child { break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1 class="screen">Bible Lookup</h1>
+  <section class="panel screen lookup-controls">
+    <div class="actions">
+      <div>
+        <label for="lookup-source">Choose verses from</label>
+        <select id="lookup-source">
+          <option value="both">Old and New Testaments</option>
+          <option value="ot">Old Testament</option>
+          <option value="nt">New Testament</option>
+          <option value="books">Choose books</option>
+        </select>
+      </div>
+      <div>
+        <label for="lookup-difficulty">Difficulty</label>
+        <select id="lookup-difficulty">
+          <option value="easy">Easy · 1 word missing</option>
+          <option value="medium" selected>Medium · 2 words missing</option>
+          <option value="hard">Hard · 3–5 words missing</option>
+        </select>
+      </div>
+    </div>
+    <fieldset id="lookup-books" hidden>
+      <legend>Books to include</legend>
+    </fieldset>
+    <div class="actions mt-3">
+      <button type="button" id="lookup-create" class="primary">Create worksheet</button>
+      <button type="button" id="lookup-save" disabled>Save PDF</button>
+    </div>
+    <p id="lookup-status" role="status"></p>
+  </section>
+  <section id="lookup-review" class="panel screen lookup-review" aria-labelledby="lookup-review-heading" hidden>
+    <h2 id="lookup-review-heading">Review verses</h2>
+    <p>The highlighted words will be blank. Use × to replace a verse.</p>
+    <ol id="lookup-verse-list" lang="de"></ol>
+  </section>
+  <section id="lookup-preview" class="lookup-preview" aria-labelledby="lookup-preview-heading" hidden>
+    <h2 id="lookup-preview-heading">Worksheet preview</h2>
+    <div id="lookup-sheets"></div>
+  </section>
+</main>
+<script src="assets/generated/bible-catalog.625f90aced90.js"></script>
+<script src="assets/generated/bible-data.e8961bf5199a.js"></script>
+<script src="assets/generated/font-conversion.2e03f68842de.js"></script>
+<script src="assets/generated/pdf.d5e66aedb03b.js"></script>
+<script src="assets/generated/bible-lookup.6aa58dd28549.js"></script>
+<script src="assets/generated/app-shell.bc403873a838.js"></script>
+<script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
+<script src="assets/generated/version.b012cbbf1819.js"></script>
+</body>
+</html>

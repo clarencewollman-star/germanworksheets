@@ -29,9 +29,7 @@
  const status = document.getElementById('bible-status');
  const previous = document.getElementById('bible-prev');
  const next = document.getElementById('bible-next');
- const books = new Map();
- window.luther1912Books = books;
- const pending = new Map();
+ const {books, loadBook, verseText} = Luther1912;
  const sections = {ot:'Old Testament', ap:'Apocrypha', nt:'New Testament'};
  const ordered = [];
  const bookButtons = new Map();
@@ -241,20 +239,6 @@
  });
  document.getElementById('bible-picker-back').addEventListener('click', showBookGrid);
 
- function loadBook(id) {
-  if (books.has(id)) return Promise.resolve(books.get(id));
-  if (pending.has(id)) return pending.get(id);
-  const loading = new Promise((resolve, reject) => {
-   const script = document.createElement('script');
-   script.src = 'assets/bible-1912/' + id + '.js';
-   script.onload = () => books.has(id) ? resolve(books.get(id)) : reject(new Error('Unknown book'));
-   script.onerror = () => reject(new Error('Could not load the book'));
-   document.head.append(script);
-  }).finally(() => pending.delete(id));
-  pending.set(id, loading);
-  return loading;
- }
-
  function chapterTarget(book, chapter, delta) {
   const chapterIndex = book.chapters.indexOf(chapter);
   const sameBook = book.chapters[chapterIndex + delta];
@@ -262,10 +246,6 @@
   const other = ordered[ordered.indexOf(book) + delta];
   if (!other) return null;
   return [other, delta < 0 ? other.chapters.at(-1) : other.chapters[0]];
- }
-
- function verseText(source) {
-  return source.replace(/[»«]/g, '').normalize('NFC');
  }
 
  function appendVerseText(container, text, node) {

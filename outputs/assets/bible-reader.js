@@ -23,6 +23,7 @@
  const projectorNext = document.getElementById('bible-projector-next');
  const projectorSize = document.getElementById('bible-projector-size');
  const projectorSizeValue = document.getElementById('bible-projector-size-value');
+ const projectorSyllables = document.getElementById('bible-projector-syllables');
  const fullscreenButton = document.getElementById('bible-projector-fullscreen');
  const selectionActions = document.getElementById('bible-selection-actions');
  const selectionStatus = document.getElementById('bible-selection-status');
@@ -273,9 +274,10 @@
   const [number, source] = rows[index];
   const text = verseText(source);
   const encode = encoders[projector.dataset.font];
+  const display = projectorSyllables.checked ? splitGermanSyllables(text) : text;
   projectorReference.textContent = book.name + ' ' + chapter + ':' + number;
   projectorText.replaceChildren();
-  appendVerseText(projectorText, text, document.createTextNode(encode ? encode(text) : text));
+  appendVerseText(projectorText, text, document.createTextNode(encode ? encode(display) : display));
   projectorStatus.textContent = '';
   projectorStage.scrollTop = 0;
   updateProjectionButtons();
@@ -290,6 +292,11 @@
  projectorSize.addEventListener('input', updateProjectionSize);
  projectorSize.addEventListener('change', updateProjectionSize);
  projectorSize.addEventListener('pointerup', () => projectorStage.focus({preventScroll: true}));
+ projectorSyllables.addEventListener('change', () => {
+  if (!projector.open) return;
+  renderProjection();
+  projectorStage.focus({preventScroll: true});
+ });
 
  projectButton.addEventListener('click', () => {
   const rows = books.get(currentBook.id)?.[currentChapter];

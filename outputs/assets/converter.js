@@ -100,17 +100,12 @@ function updatePreview(){
  copy.textContent=reverse?'Copy German text':'Copy converted text';
 }
 const splitSyllables=document.getElementById('split-syllables');
-const hyphenateGerman=createHyphenator(hyphenationPatternsDe1996,{hyphenChar:'-',minWordLength:2});
-function syllableText(text){
- // Preserve explicitly entered breaks and punctuation, including paragraph spacing.
- return text.replace(/[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*/g,word=>word.includes('-')?word:hyphenateGerman(word));
-}
 function runConversion(){
  updateFontControls();
  let text=input.value.normalize('NFC');
  const reverse=direction.value==='decode';
  if(reverse)text=decodeFont(text,font.value);
- if(splitSyllables.checked)text=syllableText(text);
+ if(splitSyllables.checked)text=splitGermanSyllables(text);
  output.value=reverse?text:fontLines(text).map(({line,family})=>encoders[family](line)).join('\n');
  updatePreview();
 }

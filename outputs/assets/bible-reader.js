@@ -41,9 +41,9 @@
  let lastBookButton;
  let request = 0;
  let verseRows = [];
+ const clickedVerses = new Set();
  let selectedPassage = '';
  let selectedVerseIndex;
- let verseSelected = false;
  let projection;
  let readerRange;
 
@@ -82,27 +82,48 @@
 
  function formatPassage(rows) {
   if (!rows.length) return '';
-  const first = rows[0].number;
-  const last = rows.at(-1).number;
-  const verseRange = first === last ? first : first + '-' + last;
-  const reference = currentBook.name + ' ' + currentChapter + ':' + verseRange;
+  const references = [];
+  let first = rows[0];
+  for (const [position, last] of rows.entries()) {
+   const next = rows[position + 1];
+   if (next?.index === last.index + 1) continue;
+   references.push(first.number === last.number ? first.number : first.number + '-' + last.number);
+   first = next;
+  }
+  const reference = currentBook.name + ' ' + currentChapter + ':' + references.join(',');
   return [...rows.map(row => row.text), reference].join('\n');
  }
 
  function updateSelection(rows) {
   selectedVerseIndex = rows[0]?.index;
   const text = formatPassage(rows);
-  if (!text) verseSelected = false;
   if (text === selectedPassage) return;
   selectedPassage = text;
   selectionActions.hidden = !text;
   selectionStatus.textContent = '';
  }
 
- document.addEventListener('selectionchange', () => {
-  updateSelection(readSelection(window.getSelection()));
- });
+ function markVerse(index, selected) {
+  const {row, button} = verseRows[index];
+  row.toggleAttribute('data-selected', selected);
+  button.setAttribute('aria-pressed', String(selected));
+  if (selected) clickedVerses.add(index);
+  else clickedVerses.delete(index);
+ }
 
+ function clearClickedVerses() {
+  for (const index of clickedVerses) markVerse(index, false);
+ }
+
+ function updateReaderSelection() {
+  const highlighted = readSelection(window.getSelection());
+  if (highlighted.length) clearClickedVerses();
+  updateSelection(highlighted.length ? highlighted : verseRows.flatMap(({number, text}, index) =>
+   clickedVerses.has(index) ? [{index, number, text}] : []
+  ));
+ }
+
+ document.addEventListener('selectionchange', updateReaderSelection);
  for (const button of [copyButton, worksheetButton, converterButton, projectButton]) {
   button.addEventListener('pointerdown', event => {
    // Keep the browser's text selection when using one of its actions.
@@ -110,29 +131,28 @@
   });
  }
 
+ document.addEventListener('click', event => {
+  if (event.target.closest('dialog, #bible-selection-actions, .bibel-verse-number, .bibel-verse-text')) return;
+  if (!window.getSelection()?.isCollapsed) return;
+  clearClickedVerses();
+  updateSelection([]);
+ });
+ document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !selectedPassage || picker.open || projector.open) return;
+  window.getSelection().removeAllRanges();
+  clearClickedVerses();
+  updateSelection([]);
+ });
+
  document.addEventListener('copy', event => {
   const selection = window.getSelection();
   const withinPassage = verses.contains(selection?.anchorNode) && verses.contains(selection?.focusNode);
-  const passage = withinPassage ? formatPassage(readSelection(selection)) : '';
+  const typing = document.activeElement?.matches('input, textarea, [contenteditable]');
+  const passage = withinPassage && !selection.isCollapsed ? formatPassage(readSelection(selection))
+   : clickedVerses.size && selection?.isCollapsed && !typing ? selectedPassage : '';
   if (!passage || !event.clipboardData) return;
   event.clipboardData.setData('text/plain', passage);
   event.preventDefault();
- });
-
- function selectVerse(node, selection) {
-  const range = document.createRange();
-  range.selectNodeContents(node);
-  selection.removeAllRanges();
-  selection.addRange(range);
-  verseSelected = true;
-  updateSelection(readSelection(selection));
- }
-
- verses.addEventListener('pointerdown', event => {
-  // Dragging from a click-selected verse should start a new text highlight.
-  if (!verseSelected || event.button !== 0 || event.shiftKey) return;
-  window.getSelection().removeAllRanges();
-  verseSelected = false;
  });
 
  copyButton.addEventListener('click', async () => {
@@ -383,7 +403,7 @@
   const rows = books.get(currentBook.id)?.[currentChapter];
   if (!rows?.[selectedVerseIndex] || projector.open) return;
   const selection = window.getSelection();
-  readerRange = selection.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
+  readerRange = selection.isCollapsed ? null : selection.getRangeAt(0).cloneRange();
   projection = {book: currentBook, chapter: currentChapter, index: selectedVerseIndex, rows};
   projector.dataset.font = font.value;
   updateProjectionSize();
@@ -468,8 +488,8 @@
    selection.removeAllRanges();
    selection.addRange(readerRange);
    updateSelection(readSelection(selection));
-   projectButton.focus({preventScroll: true});
   }
+  if (selectedPassage) projectButton.focus({preventScroll: true});
   readerRange = null;
  });
 
@@ -486,6 +506,7 @@
   verses.dataset.font = font.value;
   status.hidden = books.has(book.id);
   status.textContent = 'Loading chapter…';
+  clearClickedVerses();
   verses.replaceChildren();
   verseRows = [];
   updateSelection([]);
@@ -505,15 +526,23 @@
     verseNumber.textContent = number;
     verseNumber.lang = 'en';
     verseNumber.setAttribute('aria-label', 'Select verse ' + number);
+    verseNumber.setAttribute('aria-pressed', 'false');
     numberLabel.append(verseNumber);
     const node = document.createTextNode(display);
-    row.append(numberLabel, ' ');
-    appendVerseText(row, text, node);
+    const verseContent = document.createElement('span');
+    verseContent.className = 'bibel-verse-text';
+    appendVerseText(verseContent, text, node);
+    row.append(numberLabel, ' ', verseContent);
     const offsets = encode ? sourceOffsets(text, display, font.value === 'fraktur' ? frakturGlyphs : scriptGlyphs) : null;
-    verseRows.push({number, node, text, offsets});
+    const index = verseRows.length;
+    verseRows.push({number, node, text, offsets, row, button: verseNumber});
     row.addEventListener('click', event => {
      const selection = window.getSelection();
-     if (event.target === verseNumber || selection.isCollapsed) selectVerse(node, selection);
+     const numberClicked = event.target === verseNumber;
+     if (!numberClicked && (!verseContent.contains(event.target) || !selection.isCollapsed)) return;
+     if (!selection.isCollapsed) selection.removeAllRanges();
+     markVerse(index, !clickedVerses.has(index));
+     updateReaderSelection();
     });
     fragment.append(row);
    }

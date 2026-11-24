@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex">
   <title>Bible Lookup · German Worksheets</title>
   <script src="assets/generated/theme.83c90c9eba70.js"></script>
   <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
@@ -45,6 +44,7 @@
           <option value="ot">Old Testament</option>
           <option value="nt">New Testament</option>
           <option value="books">Choose books</option>
+          <option value="manual">Enter verse references</option>
         </select>
       </div>
       <div>
@@ -59,6 +59,11 @@
     <fieldset id="lookup-books" hidden>
       <legend>Books to include</legend>
     </fieldset>
+    <div id="lookup-manual" class="mt-3" hidden>
+      <label for="lookup-references">Verse references</label>
+      <textarea id="lookup-references" rows="4" aria-describedby="lookup-reference-help" spellcheck="false"></textarea>
+      <p id="lookup-reference-help" class="mb-0 mt-2">Enter up to 10 verses, one reference per line. Use English or German book names or abbreviations, like John 3:16 or <span lang="de">Joh 3:16–18</span>. Chapter and verse numbers follow the Luther Bible 1912.</p>
+    </div>
     <div class="actions mt-3">
       <button type="button" id="lookup-create" class="primary">Create worksheet</button>
       <button type="button" id="lookup-save" disabled>Save PDF</button>
@@ -67,7 +72,7 @@
   </section>
   <section id="lookup-review" class="panel screen lookup-review" aria-labelledby="lookup-review-heading" hidden>
     <h2 id="lookup-review-heading">Review verses</h2>
-    <p>The highlighted words will be blank. Use × to replace a verse.</p>
+    <p id="lookup-review-help"></p>
     <ol id="lookup-verse-list" lang="de"></ol>
   </section>
   <section id="lookup-preview" class="lookup-preview" aria-labelledby="lookup-preview-heading" hidden>
@@ -79,9 +84,9 @@
 <script src="assets/generated/bible-data.e8961bf5199a.js"></script>
 <script src="assets/generated/font-conversion.2e03f68842de.js"></script>
 <script src="assets/generated/pdf.d5e66aedb03b.js"></script>
-<script src="assets/generated/bible-lookup.6aa58dd28549.js"></script>
-<script src="assets/generated/app-shell.bc403873a838.js"></script>
+<script src="assets/generated/bible-lookup.9ffd703a5210.js"></script>
+<script src="assets/generated/app-shell.c1a81f1b949d.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.a5627ae8344d.js"></script>
+<script src="assets/generated/version.c345dc536e57.js"></script>
 </body>
 </html>

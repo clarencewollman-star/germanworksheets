@@ -2,15 +2,99 @@
  const source = document.getElementById('lookup-source');
  const difficulty = document.getElementById('lookup-difficulty');
  const bookPicker = document.getElementById('lookup-books');
+ const manual = document.getElementById('lookup-manual');
+ const references = document.getElementById('lookup-references');
  const create = document.getElementById('lookup-create');
  const save = document.getElementById('lookup-save');
  const status = document.getElementById('lookup-status');
  const review = document.getElementById('lookup-review');
+ const reviewHelp = document.getElementById('lookup-review-help');
  const list = document.getElementById('lookup-verse-list');
  const preview = document.getElementById('lookup-preview');
  const sheets = document.getElementById('lookup-sheets');
  const {loadBook, verseText} = Luther1912;
+ const worksheetSize = 10;
  const sections = {ot: 'Old Testament', nt: 'New Testament', ap: 'Apocrypha'};
+ const englishBookNames = {
+  1: ['Genesis', 'Gen', 'Ge', 'Gn'],
+  2: ['Exodus', 'Exod', 'Ex'],
+  3: ['Leviticus', 'Lev', 'Lv'],
+  4: ['Numbers', 'Num', 'Nu', 'Nm'],
+  5: ['Deuteronomy', 'Deut', 'Dt'],
+  6: ['Joshua', 'Josh', 'Jos'],
+  7: ['Judges', 'Judg', 'Jdg', 'Jgs'],
+  8: ['Ruth', 'Ru', 'Rth'],
+  9: ['1 Samuel', '1 Sam', '1 Sa'],
+  10: ['2 Samuel', '2 Sam', '2 Sa'],
+  11: ['1 Kings', '1 Kgs', '1 Kin', '1 Ki'],
+  12: ['2 Kings', '2 Kgs', '2 Kin', '2 Ki'],
+  13: ['1 Chronicles', '1 Chron', '1 Chr', '1 Ch'],
+  14: ['2 Chronicles', '2 Chron', '2 Chr', '2 Ch'],
+  15: ['Ezra', 'Ezr'],
+  16: ['Nehemiah', 'Neh'],
+  17: ['Esther', 'Esth', 'Est'],
+  18: ['Job', 'Jb'],
+  19: ['Psalms', 'Psalm', 'Psa', 'Ps', 'Pss'],
+  20: ['Proverbs', 'Prov', 'Pr', 'Prv'],
+  21: ['Ecclesiastes', 'Eccles', 'Eccl', 'Ecc', 'Ec'],
+  22: ['Song of Solomon', 'Song of Songs', 'Song', 'SOS', 'Canticles', 'Cant'],
+  23: ['Isaiah', 'Isa', 'Is'],
+  24: ['Jeremiah', 'Jer'],
+  25: ['Lamentations', 'Lam'],
+  26: ['Ezekiel', 'Ezek', 'Eze'],
+  27: ['Daniel', 'Dan', 'Dn'],
+  28: ['Hosea', 'Hos'],
+  29: ['Joel', 'Jl'],
+  30: ['Amos', 'Am'],
+  31: ['Obadiah', 'Obad', 'Ob'],
+  32: ['Jonah', 'Jon', 'Jnh'],
+  33: ['Micah', 'Mic'],
+  34: ['Nahum', 'Nah'],
+  35: ['Habakkuk', 'Hab'],
+  36: ['Zephaniah', 'Zeph', 'Zep'],
+  37: ['Haggai', 'Hag'],
+  38: ['Zechariah', 'Zech', 'Zec'],
+  39: ['Malachi', 'Mal'],
+  40: ['Matthew', 'Matt', 'Mat', 'Mt'],
+  41: ['Mark', 'Mk', 'Mrk'],
+  42: ['Luke', 'Lk', 'Luk'],
+  43: ['John', 'Jn', 'Jhn'],
+  44: ['Acts', 'Acts of the Apostles', 'Ac'],
+  45: ['Romans', 'Rom', 'Ro', 'Rm'],
+  46: ['1 Corinthians', '1 Cor', '1 Co'],
+  47: ['2 Corinthians', '2 Cor', '2 Co'],
+  48: ['Galatians', 'Gal'],
+  49: ['Ephesians', 'Eph'],
+  50: ['Philippians', 'Phil', 'Php'],
+  51: ['Colossians', 'Col'],
+  52: ['1 Thessalonians', '1 Thess', '1 Thes', '1 Th'],
+  53: ['2 Thessalonians', '2 Thess', '2 Thes', '2 Th'],
+  54: ['1 Timothy', '1 Tim', '1 Ti'],
+  55: ['2 Timothy', '2 Tim', '2 Ti'],
+  56: ['Titus', 'Tit'],
+  57: ['Philemon', 'Philem', 'Phlm', 'Phm'],
+  58: ['Hebrews', 'Heb'],
+  59: ['James', 'Jas', 'Jm'],
+  60: ['1 Peter', '1 Pet', '1 Pe', '1 Pt'],
+  61: ['2 Peter', '2 Pet', '2 Pe', '2 Pt'],
+  62: ['1 John', '1 Jn', '1 Jhn'],
+  63: ['2 John', '2 Jn', '2 Jhn'],
+  64: ['3 John', '3 Jn', '3 Jhn'],
+  65: ['Jude', 'Jud'],
+  66: ['Revelation', 'Rev', 'Re', 'Apocalypse'],
+  67: ['Judith', 'Jdt', 'Jth'],
+  68: ['Wisdom', 'Wisdom of Solomon', 'Wis', 'Wisd'],
+  69: ['Tobit', 'Tobias', 'Tob'],
+  70: ['Sirach', 'Ecclesiasticus', 'Sir'],
+  71: ['Baruch', 'Bar'],
+  72: ['1 Maccabees', '1 Macc', '1 Mac'],
+  73: ['2 Maccabees', '2 Macc', '2 Mac'],
+  74: ['Additions to Daniel', 'Add Daniel', 'Add Dan'],
+  75: ['Additions to Esther', 'Rest of Esther', 'Add Esther', 'Add Est'],
+  76: ['Prayer of Manasseh', 'Prayer of Manasses', 'Pr Man']
+ };
+ const bookOrdinals = {first: '1', second: '2', third: '3', i: '1', ii: '2', iii: '3'};
+ const booksByName = new Map();
  const levels = {easy: [1, 1], medium: [2, 2], hard: [3, 5]};
  const pools = new Map();
  const wordPattern = /\p{L}[\p{L}\p{M}]*(?:[-\u2010\u2011'’]\p{L}[\p{L}\p{M}]*)*/gu;
@@ -28,6 +112,12 @@
  let questions = [];
  let pickVerse;
  let busy = false;
+
+ for (const book of luther1912Catalog) {
+  for (const name of [book.name, book.short, ...englishBookNames[book.id]]) {
+   booksByName.set(bookNameKey(name), book);
+  }
+ }
 
  for (const [section, title] of Object.entries(sections)) {
   const group = document.createElement('details');
@@ -79,13 +169,50 @@
   return pool;
  }
 
+ function bookNameKey(name) {
+  return name.normalize('NFD').toLowerCase()
+   .replace(/^(first|second|third|iii|ii|i)(?=[.\s])/, ordinal => bookOrdinals[ordinal])
+   .replace(/[\p{M}.\s]/gu, '');
+ }
+
+ async function manualVerses() {
+  const lines = references.value.split('\n').map(line => line.trim()).filter(Boolean);
+  if (!lines.length) return {error: 'Enter at least one verse reference.'};
+  const found = new Map();
+  for (const line of lines) {
+   const match = line.match(/^(.+?)\s+(\d+)\s*[:,]\s*(\d+)(?:\s*[-–—]\s*(\d+))?$/);
+   if (!match) return {error: 'Check “' + line + '”. Use a reference like John 3:16.'};
+   const [, name, chapterText, firstText, lastText = firstText] = match;
+   const book = booksByName.get(bookNameKey(name));
+   if (!book) return {error: 'Unknown book in “' + line + '”. Use an English or German book name or abbreviation.'};
+   const chapter = Number(chapterText);
+   const first = Number(firstText);
+   const last = Number(lastText);
+   if (!book.chapters.includes(chapter)) return {error: 'Chapter ' + chapterText + ' was not found in ' + book.name + '.'};
+   if (!first || !Number.isSafeInteger(last) || last < first) return {error: 'Check the verse numbers in “' + line + '”.'};
+   if (last - first + 1 > worksheetSize) return {error: 'Enter up to ' + worksheetSize + ' verses per worksheet.'};
+   const pool = await bookPool(book);
+   for (let number = first; number <= last; number++) {
+    const key = book.id + '/' + chapter + '/' + number;
+    const verse = pool.find(entry => entry.key === key);
+    if (!verse) return {error: 'Could not find a unique verse for ' + book.name + ' ' + chapter + ':' + number + '.'};
+    if (!verse.words.length) return {error: verse.reference + ' has no words to use for this exercise.'};
+    found.set(key, verse);
+    if (found.size > worksheetSize) return {error: 'Enter up to ' + worksheetSize + ' verses per worksheet.'};
+   }
+  }
+  return {verses: [...found.values()]};
+ }
+
  function randomIndex(length) {
   return Math.floor(Math.random() * length);
  }
 
  function makeQuestion(verse, [min, max]) {
   const {words, text} = verse;
-  const length = min + randomIndex(Math.min(max, words.length - 2) - min + 1);
+  const maximum = Math.min(max, Math.max(1, words.length - 2));
+  const minimum = Math.min(min, maximum);
+  const length = minimum + randomIndex(maximum - minimum + 1);
   const spans = [];
   for (let i = 0; i + length <= words.length; i++) {
    const start = words[i].index;
@@ -222,6 +349,9 @@
  }
 
  function render() {
+  const manualSelection = source.value === 'manual';
+  const buttonAction = manualSelection ? 'Remove' : 'Replace';
+  reviewHelp.textContent = 'The highlighted words will be blank. Use × to ' + buttonAction.toLowerCase() + ' a verse.';
   list.replaceChildren(...questions.map((question, index) => {
    const item = document.createElement('li');
    const row = document.createElement('div');
@@ -232,13 +362,22 @@
    const marked = document.createElement('mark');
    marked.textContent = question.answer;
    passage.append(question.before, marked, question.after);
-   const replace = document.createElement('button');
-   replace.type = 'button';
-   replace.className = 'btn btn-outline-secondary';
-   replace.setAttribute('aria-label', 'Replace ' + question.reference);
-   replace.lang = 'en';
-   replace.textContent = '×';
-   replace.addEventListener('click', async () => {
+   const button = document.createElement('button');
+   button.type = 'button';
+   button.className = 'btn btn-outline-secondary';
+   button.setAttribute('aria-label', buttonAction + ' ' + question.reference);
+   button.lang = 'en';
+   button.textContent = '×';
+   button.addEventListener('click', async () => {
+    if (manualSelection) {
+     questions.splice(index, 1);
+     render();
+     updateControls();
+     status.textContent = question.reference + ' removed from the worksheet.';
+     const nextButton = list.children[Math.min(index, questions.length - 1)]?.querySelector('button');
+     (nextButton || references).focus({preventScroll: true});
+     return;
+    }
     await run('Finding a different verse…', 'Could not replace the verse. Try again.', async () => {
      const replacement = await pickVerse();
      if (!replacement) {
@@ -251,7 +390,7 @@
     });
     list.children[index]?.querySelector('button').focus({preventScroll: true});
    });
-   row.append(reference, passage, replace);
+   row.append(reference, passage, button);
    item.append(row);
    return item;
   }));
@@ -260,7 +399,7 @@
  }
 
  function updateControls() {
-  source.disabled = difficulty.disabled = bookPicker.disabled = create.disabled = busy;
+  source.disabled = difficulty.disabled = bookPicker.disabled = references.disabled = create.disabled = busy;
   save.disabled = busy || !questions.length;
   for (const button of list.querySelectorAll('button')) button.disabled = busy;
  }
@@ -289,13 +428,33 @@
   updateControls();
  }
 
- source.addEventListener('change', () => {
+ function updateSource() {
   bookPicker.hidden = source.value !== 'books';
+  manual.hidden = source.value !== 'manual';
   clearWorksheet();
- });
+ }
+
+ source.addEventListener('change', updateSource);
+ updateSource();
  difficulty.addEventListener('change', clearWorksheet);
  bookPicker.addEventListener('change', clearWorksheet);
  create.addEventListener('click', () => {
+  if (source.value === 'manual') {
+   run('Looking up verses…', 'Could not load the Bible verses or build the worksheet. Try again.', async () => {
+    const {verses, error} = await manualVerses();
+    if (error) {
+     status.textContent = error;
+     return;
+    }
+    await document.fonts.load(bodySize + 'px ' + family);
+    const level = levels[difficulty.value];
+    questions = verses.map(verse => makeQuestion(verse, level));
+    render();
+    status.textContent = (questions.length === 1 ? '1 verse ready.' : questions.length + ' verses ready.')
+     + (questions.some(question => question.length < level[0]) ? ' Short verses use fewer missing words.' : '');
+   });
+   return;
+  }
   const books = selectedBooks();
   if (!books.length) {
    status.textContent = 'Choose at least one book.';
@@ -305,7 +464,7 @@
    await document.fonts.load(bodySize + 'px ' + family);
    const sample = newSampler(books, levels[difficulty.value]);
    const found = [];
-   while (found.length < 10) {
+   while (found.length < worksheetSize) {
     const question = await sample();
     if (!question) break;
     found.push(question);
@@ -313,8 +472,8 @@
    questions = found;
    pickVerse = sample;
    render();
-   status.textContent = found.length === 10 ? '10 verses ready.' : (
-    found.length ? 'Found ' + found.length + ' eligible verses. Choose more books for a set of 10.' : 'No verses fit these settings. Try a different difficulty or choose more books.'
+   status.textContent = found.length === worksheetSize ? worksheetSize + ' verses ready.' : (
+    found.length ? 'Found ' + found.length + ' eligible verses. Choose more books for a set of ' + worksheetSize + '.' : 'No verses fit these settings. Try a different difficulty or choose more books.'
    );
   });
  });

@@ -1,0 +1,11 @@
+.alphabet-controls, .alphabet-pages { max-width: 52rem; }
+.alphabet-controls .actions { margin-top: 16px; }
+#alphabet-status { margin: 12px 0 0; }
+#alphabet-status:empty { display: none; }
+.alphabet-page { margin: 0 0 20px; border: 1px solid var(--gw-border); }
+.alphabet-page svg { display: block; width: 100%; height: auto; }
+@page { size: letter portrait; margin: 0; }
+@media print {
+ .alphabet-page { width: 8.5in; height: 11in; margin: 0; border: 0; break-after: page; }
+ .alphabet-page:last-child { break-after: auto; }
+}

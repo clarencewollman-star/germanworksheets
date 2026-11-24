@@ -13,12 +13,14 @@
   const groups=[
     {name:'Writing',items:[['handwriting-worksheet-generator.html','Handwriting','Aa']]},
     {name:'Reading & Vocabulary',items:[['flashcard-generator.html','Flashcards','▤'],['reading-practice-generator.html','Sound blending','Ab'],['letter-find.html','Letter recognition','Aa']]},
+    {name:'Bible',items:[['bibel.html','Luther Bible 1912','▤'],['bible-lookup-generator.html','Bible Lookup','⌕']]},
     {name:'Puzzles',items:[['crossword-generator.html','Crossword','▦'],['wordsearch-generator.html','Word search','⌕']]},
     {name:'Packets',items:[['packet-builder.html','Packet Builder','▣']]},
     {name:'Utilities',items:[['text-converter.html','Text converter','⇄'],['letter-projector.html','Letter projector','Aa']]}
   ];
   const items=[['index.html','All Worksheets','⌂',''],...groups.flatMap(group=>group.items.map(item=>[...item,group.name]))];
-  const current=location.pathname.split('/').pop()||'index.html';
+  const filename=location.pathname.split('/').pop()||'index.html';
+  const current=filename==='bibel'?'bibel.html':filename;
   const title=items.find(i=>i[0]===current)?.[1]||main.querySelector('h1')?.textContent||'German Worksheets';
   document.body.classList.add('layout-fixed','sidebar-expand-lg','bg-body-tertiary');
   const wrapper=document.createElement('div');wrapper.className='app-wrapper';

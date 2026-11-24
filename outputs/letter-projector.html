@@ -27,6 +27,10 @@ label{font-weight:600}
 #stage.alphabet-complete::after{content:attr(data-completion);position:absolute;right:1rem;bottom:.6rem;color:#526b5e;font:500 .85rem/1.3 system-ui}
 #stage.sounds{font-size:min(19vw,32vh)}#stage.sounds.multiple{font-size:min(11vw,19vh)}
 #projection:fullscreen #stage.sounds{font-size:min(23vw,52vh)}#projection:fullscreen #stage.sounds.multiple{font-size:min(12vw,29vh)}
+#stage.silent-h{container-type:inline-size;--silent-h-width:38cqw;--silent-h-height:36vh}
+#stage.silent-h-words{--silent-h-width:18cqw}
+#projection:fullscreen #stage.silent-h{--silent-h-height:55vh}
+#stage.silent-h>span{font-size:min(var(--silent-h-width),var(--silent-h-height))}
 #exit-full{display:none}#projection:fullscreen #exit-full{display:block;position:absolute;top:.5rem;right:.5rem;z-index:1}
 #stage canvas{width:0;height:0;vertical-align:middle;box-shadow:none;background:transparent}
 .final-st::before{content:"";display:inline-block;width:.5em;margin-right:.08em;border-bottom:.035em solid currentColor;vertical-align:baseline}
@@ -40,11 +44,12 @@ label{font-weight:600}
 <a href="index.html">← All Worksheets</a>
 <h1>Letter Projector</h1>
 <div class="controls">
-<label>Review<select class="form-select" id="review"><option value="alphabet">Alphabet</option><option value="sounds">Doppellaute und Umlaute</option><option value="syllables">Syllable practice</option><option value="numbers">Numbers</option><option value="colors">Colors</option></select></label>
+<label>Review<select class="form-select" id="review"><option value="alphabet">Alphabet</option><option value="sounds">Doppellaute und Umlaute</option><option value="syllables">Syllable practice</option><option value="silent-h">Silent h</option><option value="numbers">Numbers</option><option value="colors">Colors</option></select></label>
 <label>Font<select class="form-select" id="font"><option>Arial</option><option value="Hand">BW Hand Schrift</option><option>Handschrift</option><option>Fraktur</option><option value="mixed">Mixed fonts</option></select></label>
 <label hidden data-number-control>From<input type="number" id="range-start" min="0" max="9999" value="1"></label>
 <label hidden data-number-control>To<input type="number" id="range-end" min="0" max="9999" value="20"></label>
 <label hidden data-number-control>Show<select id="number-order"><option value="number-only">Number only</option><option value="name-only">Name only</option><option value="together" selected>Number and name together</option><option value="number">Number first</option><option value="name">Name first</option></select></label>
+<label hidden>Show<select id="silent-h-show"><option value="patterns">Letter patterns</option><option value="words">Example words</option></select></label>
 <label hidden id="color-order-control">Show<select id="color-order"><option value="together">Color and name together</option><option value="color">Color first</option><option value="name">Name first</option></select></label><label><span id="case-label">Letters</span><select class="form-select" id="casing"><option value="lower">Lowercase</option><option value="upper">Uppercase</option><option value="mixed">Mixed case</option></select></label>
 <label><span id="count-label">Letters per page</span><select class="form-select" id="letter-count"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
 <label><input type="checkbox" id="pictures"> Show pictures</label>
@@ -60,9 +65,9 @@ label{font-weight:600}
 <script src="assets/generated/colors.c4415579d65b.js"></script><script src="assets/generated/settings.f338bba8fd5b.js"></script>
 <script src="assets/generated/handschrift-metrics.290155e0940e.js"></script>
 <script src="assets/generated/font-conversion.2e03f68842de.js"></script>
-<script src="assets/generated/reader-cards.63420fdb78d1.js"></script><script src="assets/generated/letter-projector.eace58eb094a.js"></script>
+<script src="assets/generated/reader-cards.63420fdb78d1.js"></script><script src="assets/generated/silent-h.710bb96eb8a5.js"></script><script src="assets/generated/letter-projector.81d2aad627c2.js"></script>
 <script src="assets/generated/app-shell.c1a81f1b949d.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.c345dc536e57.js"></script>
+<script src="assets/generated/version.c1f77abccf57.js"></script>
 <script src="assets/generated/update-check.3c11939acad8.js"></script>
 <script src="assets/generated/feedback.8f238172d090.js"></script></body></html>

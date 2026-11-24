@@ -9,6 +9,7 @@ const pictures=document.getElementById('pictures');
 const reveal=document.getElementById('reveal');
 const next=document.getElementById('next');
 const review=document.getElementById('review');
+const silentHShow=document.getElementById('silent-h-show');
 const practiceSyllables='ab ad af ag ak al am an ap ar as at av aw az ba be bi bo bu da de di do du eb ed ef eg eh ek el em en ep er es et ew ez fa fe fi fo fu ga ge gi go gu ha he hi ho hu ib id if ig ik il im in ip ir is it iz ja je ji jo ju ka ke ki ko ku la le li lo lu ma me mi mo mu na ne ni no nu ob od of og ok ol om on op or os ot ow oz pa pe pi po pu qu ra re ri ro ru sa se si so su ta te ti to tu ub ud uf ug uh uk ul um un up ur us wa we wi wo wu za ze zi zo zu'.split(' ');
 let keys=[];
 let revealed=false;
@@ -130,6 +131,9 @@ colorOrder.addEventListener('change',()=>{revealed=false;if(review.value==='colo
 document.getElementById('color-choices').addEventListener('change',()=>{remainingColors=[];if(review.value==='colors')drawColor()});
 function changeReview(){
  const numbers=review.value==='numbers',colors=review.value==='colors';
+ const silentH=review.value==='silent-h';
+ silentHShow.closest('label').hidden=!silentH;
+ stage.classList.toggle('silent-h',silentH);
  document.getElementById('color-order-control').hidden=!colors;
  document.getElementById('color-choices').hidden=!colors;
  stage.classList.toggle('colors',colors);
@@ -137,8 +141,8 @@ function changeReview(){
  document.getElementById('case-label').textContent=syllables?'First letter':'Letters';
  document.getElementById('count-label').textContent=syllables?'Syllables per page':'Letters per page';
  for(const control of document.querySelectorAll('[data-number-control]'))control.hidden=!numbers;
- for(const control of [casing,count,pictures])control.closest('label').hidden=numbers||colors;
- pictures.closest('label').hidden=numbers||colors||syllables;
+ for(const control of [casing,count])control.closest('label').hidden=numbers||colors||silentH;
+ pictures.closest('label').hidden=numbers||colors||syllables||silentH;
  stage.classList.toggle('numbers',numbers);
  document.getElementById('range-error').hidden=true;
  next.disabled=stage.disabled=false;
@@ -149,8 +153,11 @@ function changeReview(){
   remainingNumbers=[];drawNumber();
  }else restartAlphabet();
 }
+function showPictures(){
+ return pictures.checked && ['alphabet','sounds'].includes(review.value);
+}
 function awaitingReveal(){
- return review.value!=='syllables' && pictures.checked && reveal.checked && !revealed;
+ return showPictures() && reveal.checked && !revealed;
 }
 function advance(){
  if(review.value==='colors'){if(!revealed&&colorOrder.value!=='together'){revealed=true;renderColor()}else drawColor();return;}
@@ -166,9 +173,11 @@ function advance(){
  }else nextLetter();
 }
 function updatePictures(){
- const withPictures=pictures.checked&&review.value!=='syllables';
+ const withPictures=showPictures();
  document.getElementById('reveal-option').hidden=!withPictures;
- const action=awaitingReveal()?'Reveal pictures':'Next page';
+ const action=review.value==='silent-h'
+  ? (silentHShow.value==='words'?'Next word':'Next pattern')
+  : (awaitingReveal()?'Reveal pictures':'Next page');
  next.textContent=action;
  stage.setAttribute('aria-label',letters.join(', ')+(complete?' — '+stage.dataset.completion:'')+' — '+action);
  stage.classList.toggle('with-pictures',withPictures);
@@ -276,15 +285,18 @@ function nextLetter(){
  if(complete)seen.clear();
  const sounds=review.value==='sounds';
  const syllables=review.value==='syllables';
+ const silentH=review.value==='silent-h';
  stage.classList.toggle('sounds',sounds||syllables);
- stage.dataset.completion=syllables?'✓ Syllable practice complete':sounds?'✓ Doppellaute complete':'✓ Alphabet complete';
- const alphabet=syllables?practiceSyllables:sounds?Object.keys(readerCards):[...new Set([...pool].map(letter=>letter.toLowerCase()))]
+ stage.classList.toggle('silent-h-words',silentH&&silentHShow.value==='words');
+ stage.dataset.completion=silentH?'✓ Silent h practice complete':syllables?'✓ Syllable practice complete':sounds?'✓ Doppellaute complete':'✓ Alphabet complete';
+ const alphabet=silentH?silentHDecks[silentHShow.value]:syllables?practiceSyllables:sounds?Object.keys(readerCards):[...new Set([...pool].map(letter=>letter.toLowerCase()))]
   .filter(letter=>!pictures.checked || /^[a-z]$/.test(letter));
  const previous=keys;
  keys=[];
  const choices=alphabet.slice();
  letters=[];
- for(let i=0;i<Number(count.value);i++){
+ const pageSize=silentH?1:Number(count.value);
+ for(let i=0;i<pageSize;i++){
   const unseen=choices.filter(letter=>!seen.has(letter));
   const candidates=unseen.length?unseen:choices;
   const fresh=candidates.filter(letter=>!previous.includes(letter));
@@ -294,7 +306,8 @@ function nextLetter(){
   seen.add(key);
   keys.push(key);
   let forms;
-  if(syllables){
+  if(silentH)forms=[key];
+  else if(syllables){
    const capital=key[0].toUpperCase()+key.slice(1);
    forms=casing.value==='mixed'?[key,capital]:[casing.value==='upper'?capital:key];
   }else if(sounds){
@@ -315,6 +328,7 @@ function restartAlphabet(){
  nextLetter();
 }
 review.addEventListener('change',changeReview);
+silentHShow.addEventListener('change',()=>{if(review.value==='silent-h')restartAlphabet()});
 for(const field of [firstNumber,lastNumber])field.addEventListener('input',()=>{if(review.value==='numbers'){remainingNumbers=[];drawNumber()}});
 numberOrder.addEventListener('change',()=>{if(review.value==='numbers'){revealed=false;renderNumber()}});
 pictures.addEventListener('change',restartAlphabet);

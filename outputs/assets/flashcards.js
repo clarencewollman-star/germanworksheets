@@ -5,6 +5,7 @@ const formatted=document.getElementById('formatted');
 const supported=new Set(["\u0000","\r"," ","!","\"","#","$","%","&","'","(",")","*","+",",","-",".","/","0","1","2","3","4","5","6","7","8","9",":",";","<","=",">","?","@","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","[","\\","]","^","_","`","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","{","|","}","~"," ","¤","§","©","ª","«","®","°","²","´","µ","¶","»","¼","½","¾","Ä","Ô","Õ","Ö","Ø","Ù","Û","Ü","Ý","ß","à","á","ä","æ","ç","è","é","ê","í","ï","ó","õ","ö","ø","ú","ü","—","‘","’","‚","“","”","„","†","•","…","‰","€"]);let canvases=[],ready=false;
 const cardSet=document.getElementById('card-set');
 const pictureCase=document.getElementById('picture-case');
+const silentHShow=document.getElementById('silent-h-show');
 function pairedLabel(upper,lower){return upper+' '+lower+(lower==='s'?' ſ':'')}
 function pictureLabel(card){
  if(cardSet.value==='colors')return card.name;
@@ -27,6 +28,7 @@ function encodeCard(word){
  return word.split('ſ').map(part=>encode(part)).join(longS);
 }
 pictureCase.addEventListener('change',render);
+silentHShow.addEventListener('change',render);
 const pictureDecks=new Map();
 function pictureDeck(kind){
  if(pictureDecks.has(kind))return pictureDecks.get(kind);
@@ -50,12 +52,13 @@ async function selectDeck(){
  const kind=cardSet.value;
  document.getElementById('picture-case-control').hidden=kind!=='alphabet';
  document.getElementById('color-choices').hidden=kind!=='colors';
+ document.getElementById('silent-h-control').hidden=kind!=='silent-h';
  const custom=kind==='words';
  document.getElementById('word-controls').hidden=!custom;
  document.getElementById('formatted-label').hidden=!custom||style.value!=='fraktur';
  deck=[];
  render();
- if(custom)return;
+ if(custom||kind==='silent-h')return;
  if(kind==='colors'){deck=selectedColors();render();return;}
  try{
   const loaded=await pictureDeck(kind);
@@ -65,26 +68,42 @@ async function selectDeck(){
  }catch{if(revision===selection)error.textContent='Could not load the reader pictures. Reopen the page to try again.'}
 }
 cardSet.addEventListener('change',selectDeck);
-function render(){if(!ready)return;pages.replaceChildren();canvases=[];error.textContent='';const illustrated=cardSet.value!=='words';const cards=cardSet.value==='colors'?selectedColors():cardSet.value==='alphabet' && pictureCase.value==='lower'
+function render(){
+if(!ready)return;
+pages.replaceChildren();canvases=[];error.textContent='';
+const kind=cardSet.value;
+const illustrated=['colors','alphabet','sounds'].includes(kind);
+const cards=kind==='colors'?selectedColors():kind==='alphabet' && pictureCase.value==='lower'
  ?withLongS(deck,card=>card.forms[0]==='s',card=>({forms:['ſ','S'],image:card.image})):deck;
-const list=illustrated?cards.map(pictureLabel):words.value.split(/\r?\n/).map(s=>s.trim().normalize('NFC')).filter(Boolean);save.disabled=true;if(!list.length){status.textContent=cardSet.value==='colors'?'Choose at least one color.':illustrated?'Loading pictures…':'Add words to create cards.';return}if(list.length>300){error.textContent='Please use up to 300 cards at a time.';return}const handschrift=style.value==='Handschrift',script=style.value==='script',fraktur=style.value==='fraktur',pt=Math.max(16,Math.min(160,Number(size.value)||64)),converted=list.map(w=>cardSet.value==='sounds'&&w==='_st'?'st':w).map(encodeCard);if(script||fraktur||handschrift){const missing=[...new Set(converted.join('').split('').filter(c=>!(handschrift?new Set(Object.keys(handschriftWidths)):fraktur?frakturSupported:supported).has(c)))];if(missing.length){error.textContent='This font does not include: '+missing.join(' ')+'. Use Print or change these characters.';return}}
+const list=kind==='silent-h'?silentHDecks[silentHShow.value]:illustrated?cards.map(pictureLabel)
+ :words.value.split(/\r?\n/).map(s=>s.trim().normalize('NFC')).filter(Boolean);
+save.disabled=true;if(!list.length){status.textContent=kind==='colors'?'Choose at least one color.':illustrated?'Loading pictures…':'Add words to create cards.';return}if(list.length>300){error.textContent='Please use up to 300 cards at a time.';return}const handschrift=style.value==='Handschrift',script=style.value==='script',fraktur=style.value==='fraktur',pt=Math.max(16,Math.min(160,Number(size.value)||64)),converted=list.map(w=>kind==='sounds'&&w==='_st'?'st':w).map(encodeCard);if(script||fraktur||handschrift){const missing=[...new Set(converted.join('').split('').filter(c=>!(handschrift?new Set(Object.keys(handschriftWidths)):fraktur?frakturSupported:supported).has(c)))];if(missing.length){error.textContent='This font does not include: '+missing.join(' ')+'. Use Print or change these characters.';return}}
 let fitted=0;
-let colorSize=pt;
-if(cardSet.value==='colors'){
+const family=handschrift?'Handschrift':script?'Hand':fraktur?'Fraktur':'Arial';
+const textWidth=illustrated?306:540;
+const uniformSize=kind==='colors'||kind==='silent-h';
+let deckSize=pt;
+if(uniformSize){
  const measure=document.createElement('canvas').getContext('2d');
- measure.font=pt+'px '+(handschrift?'Handschrift':script?'Hand':fraktur?'Fraktur':'Arial');
+ measure.font=pt+'px '+family;
  for(const word of converted){
   const m=measure.measureText(word);
   const width=Math.max(m.width,m.actualBoundingBoxLeft+m.actualBoundingBoxRight);
   const height=m.actualBoundingBoxAscent+m.actualBoundingBoxDescent;
-  colorSize=Math.min(colorSize,pt*Math.min(1,306/Math.max(1,width),216/Math.max(1,height)));
+  deckSize=Math.min(deckSize,pt*Math.min(1,textWidth/Math.max(1,width),216/Math.max(1,height)));
  }
 }
 
 for(let start=0;start<list.length;start+=3){const canvas=document.createElement('canvas');canvas.width=1836;canvas.height=2376;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Flashcards: '+list.slice(start,start+3).join(', '));const c=canvas.getContext('2d');c.scale(3,3);c.fillStyle='white';c.fillRect(0,0,612,792);c.strokeStyle='#a0a0a0';c.lineWidth=.5;c.setLineDash([4,4]);for(const y of [264,528]){c.beginPath();c.moveTo(18,y);c.lineTo(594,y);c.stroke()}c.setLineDash([]);
-converted.slice(start,start+3).forEach((word,i)=>{let actual=cardSet.value==='colors'?colorSize:pt;const family=handschrift?'Handschrift':script?'Hand':fraktur?'Fraktur':'Arial';c.font=actual+'px '+family;let m=c.measureText(word);const finalSt=cardSet.value==='sounds' && list[start+i]==='_st';
-const width=Math.max(m.width,m.actualBoundingBoxLeft+m.actualBoundingBoxRight)+(finalSt ? .58*actual:0);const textWidth=illustrated?306:540;if(width>textWidth){actual*=textWidth/width;fitted++}c.font=actual+'px '+family;m=c.measureText(word);const height=m.actualBoundingBoxAscent+m.actualBoundingBoxDescent;if(height>216){actual*=216/height;c.font=actual+'px '+family;m=c.measureText(word)}c.fillStyle='#202822';if(illustrated){
- if(cardSet.value==='colors'){c.fillStyle=cards[start+i].hex;c.beginPath();c.roundRect(370,i*264+52,194,160,12);c.fill();c.strokeStyle='#999';c.lineWidth=.7;c.stroke();c.fillStyle='#202822';}else{
+converted.slice(start,start+3).forEach((word,i)=>{let actual=deckSize;c.font=actual+'px '+family;let m=c.measureText(word);const finalSt=kind==='sounds' && list[start+i]==='_st';
+if(!uniformSize){
+ const width=Math.max(m.width,m.actualBoundingBoxLeft+m.actualBoundingBoxRight)+(finalSt ? .58*actual:0);
+ if(width>textWidth){actual*=textWidth/width;fitted++;c.font=actual+'px '+family;m=c.measureText(word)}
+ const height=m.actualBoundingBoxAscent+m.actualBoundingBoxDescent;
+ if(height>216){actual*=216/height;c.font=actual+'px '+family;m=c.measureText(word)}
+}
+c.fillStyle='#202822';if(illustrated){
+ if(kind==='colors'){c.fillStyle=cards[start+i].hex;c.beginPath();c.roundRect(370,i*264+52,194,160,12);c.fill();c.strokeStyle='#999';c.lineWidth=.7;c.stroke();c.fillStyle='#202822';}else{
  const image=cards[start+i].image;
  const scale=Math.min(206/image.naturalWidth,207/image.naturalHeight);
  const w=image.naturalWidth*scale,h=image.naturalHeight*scale;
@@ -109,6 +128,18 @@ document.getElementById('add-alphabet').addEventListener('click',()=>{
  const letters=alphabetCards(document.getElementById('alphabet-style').value,document.getElementById('german-letters').checked);
  const existing=words.value.trimEnd();words.value=(existing?existing+'\n':'')+letters.join('\n');words.dispatchEvent(new Event('input',{bubbles:true}));render();
 });
-let timer;words.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(render,200)});style.addEventListener('change',()=>{document.getElementById('formatted-label').hidden=cardSet.value!=='words'||style.value!=='fraktur';render()});formatted.addEventListener('change',render);size.addEventListener('input',render);size.addEventListener('change',()=>{size.value=Math.max(16,Math.min(160,Math.round(Number(size.value)||64)));render()});save.addEventListener('click',()=>{clearTimeout(timer);render();if(save.disabled)return;const title=cardSet.value==='colors'?'Farben':cardSet.value==='alphabet'?'Alphabet':cardSet.value==='sounds'?'Doppellaute und Umlaute':words.value.trim().split(/\s+/).slice(0,3).join(' ').replace(/[<>:"/\\|?*\x00-\x1f]/g,'').replace(/[. ]+$/g,'').slice(0,100);GermanPDF.download(makePDF(canvases),'FC '+(title||'Flashcards')+'.pdf')});Promise.all([document.fonts.load('64px Handschrift'),document.fonts.load('64px Hand'),document.fonts.load('64px Fraktur')]).then(()=>{ready=true;selectDeck()}).catch(()=>{error.textContent='Could not load the fonts. Reopen the file in your browser.'});
+let timer;words.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(render,200)});style.addEventListener('change',()=>{document.getElementById('formatted-label').hidden=cardSet.value!=='words'||style.value!=='fraktur';render()});formatted.addEventListener('change',render);size.addEventListener('input',render);size.addEventListener('change',()=>{size.value=Math.max(16,Math.min(160,Math.round(Number(size.value)||64)));render()});
+save.addEventListener('click',()=>{
+ clearTimeout(timer);render();if(save.disabled)return;
+ const titles={
+  colors:'Farben',
+  alphabet:'Alphabet',
+  sounds:'Doppellaute und Umlaute',
+  'silent-h':silentHShow.value==='patterns'?'Stummes h - Buchstabengruppen':'Stummes h - Wörter'
+ };
+ const title=titles[cardSet.value]||words.value.trim().split(/\s+/).slice(0,3).join(' ').replace(/[<>:"/\\|?*\x00-\x1f]/g,'').replace(/[. ]+$/g,'').slice(0,100);
+ GermanPDF.download(makePDF(canvases),'FC '+(title||'Flashcards')+'.pdf');
+});
+Promise.all([document.fonts.load('64px Handschrift'),document.fonts.load('64px Hand'),document.fonts.load('64px Fraktur')]).then(()=>{ready=true;selectDeck()}).catch(()=>{error.textContent='Could not load the fonts. Reopen the file in your browser.'});
 
 document.getElementById("color-choices").addEventListener("change",render);

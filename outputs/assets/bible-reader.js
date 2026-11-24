@@ -24,6 +24,8 @@
  const projectorSize = document.getElementById('bible-projector-size');
  const projectorSizeValue = document.getElementById('bible-projector-size-value');
  const projectorSyllables = document.getElementById('bible-projector-syllables');
+ const projectorLineMode = document.getElementById('bible-projector-line-mode');
+ const projectorLineCount = document.getElementById('bible-projector-line-count');
  const fullscreenButton = document.getElementById('bible-projector-fullscreen');
  const selectionActions = document.getElementById('bible-selection-actions');
  const selectionStatus = document.getElementById('bible-selection-status');
@@ -264,39 +266,108 @@
  }
 
  function updateProjectionButtons() {
-  const {book, chapter, index, rows, loading} = projection;
-  projectorBack.disabled = Boolean(loading || (index === 0 && !chapterTarget(book, chapter, -1)));
-  projectorNext.disabled = Boolean(loading || (index === rows.length - 1 && !chapterTarget(book, chapter, 1)));
+  const {book, chapter, index, rows, loading, lines, lineIndex} = projection;
+  projectorBack.disabled = Boolean(loading || ((!lines || lineIndex === 0) && index === 0 && !chapterTarget(book, chapter, -1)));
+  projectorNext.disabled = Boolean(loading || ((!lines || lineIndex === lines.length - 1) && index === rows.length - 1 && !chapterTarget(book, chapter, 1)));
  }
 
- function renderProjection() {
+ function projectionLines(readable, encoded) {
+  // Measure the wrapped verse with the actual display font and width.
+  const measure = document.createElement('div');
+  measure.className = 'bibel-projector-text bibel-projector-measure';
+  measure.setAttribute('aria-hidden', 'true');
+  const node = document.createTextNode(encoded);
+  measure.append(node);
+  projectorText.after(measure);
+  const range = document.createRange();
+  const boundaries = [0];
+  let offset = 0;
+  let previousTop;
+  for (const character of encoded) {
+   range.setStart(node, offset);
+   range.setEnd(node, offset + character.length);
+   const rect = range.getClientRects()[0];
+   if (rect?.width > 0) {
+    if (previousTop !== undefined && Math.abs(rect.top - previousTop) > .5) boundaries.push(offset);
+    previousTop = rect.top;
+   }
+   offset += character.length;
+  }
+  measure.remove();
+  boundaries.push(encoded.length);
+  const offsets = encoded === readable ? null : sourceOffsets(readable, encoded, projector.dataset.font === 'fraktur' ? frakturGlyphs : scriptGlyphs);
+  return boundaries.slice(0, -1).map((start, index) => {
+   const end = boundaries[index + 1];
+   return {start, end, text: encoded.slice(start, end).trim(), spoken: readable.slice(offsets?.[start] ?? start, offsets?.[end] ?? end).trim()};
+  });
+ }
+
+ function showProjectionLine() {
+  const {lines, lineIndex} = projection;
+  const line = lines[lineIndex];
+  projectorText.replaceChildren();
+  appendVerseText(projectorText, line.spoken, document.createTextNode(line.text));
+  projectorLineCount.textContent = 'Line ' + (lineIndex + 1) + ' of ' + lines.length;
+  projectorStage.scrollTop = 0;
+  updateProjectionButtons();
+ }
+
+ function renderProjection({lastLine = false, offset = 0} = {}) {
   const {book, chapter, index, rows} = projection;
   const [number, source] = rows[index];
   const text = verseText(source);
   const encode = encoders[projector.dataset.font];
   const display = projectorSyllables.checked ? splitGermanSyllables(text) : text;
-  projectorReference.textContent = book.name + ' ' + chapter + ':' + number;
-  projectorText.replaceChildren();
-  appendVerseText(projectorText, text, document.createTextNode(encode ? encode(display) : display));
+  const encoded = encode ? encode(display) : display;
+  const reference = book.name + ' ' + chapter + ':' + number;
+  if (projectorReference.textContent !== reference) projectorReference.textContent = reference;
+  const lineMode = projectorLineMode.checked;
+  projector.dataset.lineMode = String(lineMode);
+  projectorLineCount.hidden = !lineMode;
+  projectorBack.setAttribute('aria-label', lineMode ? 'Back one line' : 'Back one verse');
+  projectorNext.setAttribute('aria-label', lineMode ? 'Next line' : 'Next verse');
   projectorStatus.textContent = '';
+  if (lineMode) {
+   const lines = projectionLines(display, encoded);
+   projection.lines = lines;
+   projection.lineIndex = lastLine ? lines.length - 1 : Math.max(0, lines.findIndex(line => offset < line.end));
+   showProjectionLine();
+   projection.lineWidth = projectorText.clientWidth;
+   return;
+  }
+  projection.lines = null;
+  projectorText.replaceChildren();
+  appendVerseText(projectorText, text, document.createTextNode(encoded));
   projectorStage.scrollTop = 0;
   updateProjectionButtons();
+ }
+
+ function reflowProjection() {
+  if (!projector.open || !projection?.lines) return;
+  renderProjection({offset: projection.lines[projection.lineIndex].start});
  }
 
  function updateProjectionSize() {
   const value = projectorSize.value + ' px';
   projector.style.setProperty('--projection-size', projectorSize.value + 'px');
   projectorSizeValue.value = value;
+  reflowProjection();
  }
 
  projectorSize.addEventListener('input', updateProjectionSize);
  projectorSize.addEventListener('change', updateProjectionSize);
  projectorSize.addEventListener('pointerup', () => projectorStage.focus({preventScroll: true}));
- projectorSyllables.addEventListener('change', () => {
-  if (!projector.open) return;
-  renderProjection();
-  projectorStage.focus({preventScroll: true});
- });
+ for (const toggle of [projectorSyllables, projectorLineMode]) {
+  toggle.addEventListener('change', () => {
+   if (!projector.open) return;
+   renderProjection();
+   projectorStage.focus({preventScroll: true});
+  });
+ }
+ new ResizeObserver(() => {
+  if (projection?.lineWidth !== projectorText.clientWidth) reflowProjection();
+ }).observe(projectorText);
+ document.fonts.addEventListener('loadingdone', reflowProjection);
 
  projectButton.addEventListener('click', () => {
   const rows = books.get(currentBook.id)?.[currentChapter];
@@ -306,18 +377,24 @@
   projection = {book: currentBook, chapter: currentChapter, index: selectedVerseIndex, rows};
   projector.dataset.font = font.value;
   updateProjectionSize();
-  renderProjection();
   projector.showModal();
+  renderProjection();
   projectorStage.focus({preventScroll: true});
  });
 
  async function stepProjection(delta) {
   if (!projection || projection.loading) return;
-  const {book, chapter, index, rows} = projection;
+  const {book, chapter, index, rows, lines, lineIndex} = projection;
+  const nextLine = lineIndex + delta;
+  if (lines?.[nextLine]) {
+   projection.lineIndex = nextLine;
+   showProjectionLine();
+   return;
+  }
   const nextIndex = index + delta;
   if (rows[nextIndex]) {
    projection.index = nextIndex;
-   renderProjection();
+   renderProjection({lastLine: delta < 0});
    return;
   }
   const target = chapterTarget(book, chapter, delta);
@@ -331,7 +408,7 @@
    if (projection !== waiting || !projector.open) return;
    const targetRows = chapters[targetChapter];
    projection = {book: targetBook, chapter: targetChapter, index: delta < 0 ? targetRows.length - 1 : 0, rows: targetRows};
-   renderProjection();
+   renderProjection({lastLine: delta < 0});
   } catch {
    if (projection !== waiting || !projector.open) return;
    waiting.loading = false;

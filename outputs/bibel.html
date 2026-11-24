@@ -60,12 +60,16 @@
     .bibel-projector .bibel-projector-size label { margin: 0; }
     .bibel-projector-size input { width: clamp(100px, 16vw, 180px); accent-color: #28644a; }
     .bibel-projector-size output { min-width: 4ch; font-variant-numeric: tabular-nums; }
-    .bibel-projector-tools .bibel-projector-syllables { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin: 0; }
-    .bibel-projector-syllables input { margin: 0; }
+    .bibel-projector-tools .bibel-projector-option { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin: 0; }
+    .bibel-projector-option input { margin: 0; }
     .bibel-projector-stage { display: flex; overflow: auto; padding: clamp(16px, 5vw, 76px); }
-    .bibel-projection-content { width: 100%; max-width: 1400px; margin: auto; }
-    .bibel-projector .bibel-projector-reference { font: 600 clamp(18px, 2vw, 28px) system-ui, sans-serif; color: var(--gw-muted); margin: 0 0 .75em; }
+    .bibel-projection-content { position: relative; width: 100%; max-width: 1400px; margin: auto; }
+    .bibel-projector-location { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; color: var(--gw-muted); margin-bottom: 14px; }
+    .bibel-projector .bibel-projector-reference { font: 600 clamp(18px, 2vw, 28px) system-ui, sans-serif; margin: 0; }
+    .bibel-projector-line-count { font-size: .875rem; }
     .bibel-projector-text { font: var(--projection-size, 56px)/1.38 Arial, sans-serif; overflow-wrap: anywhere; }
+    .bibel-projector[data-line-mode="true"] #bible-projector-text { white-space: nowrap; }
+    .bibel-projector-measure { position: absolute; inset: 0 0 auto; height: 1px; overflow: hidden; visibility: hidden; pointer-events: none; }
     .bibel-projector[data-font="fraktur"] .bibel-projector-text { font-family: Fraktur, serif; }
     .bibel-projector[data-font="hand"] .bibel-projector-text { font-family: Hand, cursive; line-height: 1.45; }
     .bibel-projector[data-font="handschrift"] .bibel-projector-text { font-family: Handschrift, cursive; line-height: 1.45; }
@@ -137,13 +141,17 @@
             <input id="bible-projector-size" class="form-range" type="range" min="24" max="160" value="56">
             <output id="bible-projector-size-value" for="bible-projector-size">56 px</output>
           </div>
-          <label class="bibel-projector-syllables"><input type="checkbox" id="bible-projector-syllables"> Split syllables</label>
+          <label class="bibel-projector-option"><input type="checkbox" id="bible-projector-syllables"> Split syllables</label>
+          <label class="bibel-projector-option"><input type="checkbox" id="bible-projector-line-mode"> One line at a time</label>
           <button type="button" id="bible-projector-fullscreen" hidden>Full screen</button>
           <form method="dialog"><button type="submit">Exit projector</button></form>
         </header>
         <div id="bible-projector-stage" class="bibel-projector-stage" tabindex="0" aria-label="Projected verse">
           <div class="bibel-projection-content">
-            <h2 id="bible-projector-reference" class="bibel-projector-reference" lang="de" aria-live="polite"></h2>
+            <div class="bibel-projector-location">
+              <h2 id="bible-projector-reference" class="bibel-projector-reference" lang="de" aria-live="polite"></h2>
+              <span id="bible-projector-line-count" class="bibel-projector-line-count" role="status" hidden></span>
+            </div>
             <div id="bible-projector-text" class="bibel-projector-text" lang="de"></div>
             <div id="bible-projector-status" role="status"></div>
           </div>
@@ -159,10 +167,10 @@
 <script src="assets/generated/hyphen-de.c62547beb14d.js"></script>
 <script src="assets/generated/german-syllables.8b8b93189d2c.js"></script>
 <script src="assets/generated/settings.f338bba8fd5b.js"></script>
-<script src="assets/generated/bible-reader.79c4a75c7739.js"></script>
+<script src="assets/generated/bible-reader.ef027f86942e.js"></script>
 <script src="assets/generated/app-shell.bc403873a838.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.dfa46eef3423.js"></script>
+<script src="assets/generated/version.86841d9d16a0.js"></script>
 <script src="assets/generated/update-check.3c11939acad8.js"></script>
 </body>
 </html>

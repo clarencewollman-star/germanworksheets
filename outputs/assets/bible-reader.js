@@ -272,39 +272,48 @@
  }
 
  function projectionLines(readable, encoded) {
-  // Measure the wrapped verse with the actual display font and width.
+  // Measure words as indivisible units, even when they contain syllable hyphens.
   const measure = document.createElement('div');
   measure.className = 'bibel-projector-text bibel-projector-measure';
   measure.setAttribute('aria-hidden', 'true');
-  const node = document.createTextNode(encoded);
-  measure.append(node);
+  const words = [];
+  for (const {0: text, index} of encoded.matchAll(/\S+/g)) {
+   const node = document.createElement('span');
+   node.textContent = text;
+   if (words.length) measure.append(' ');
+   measure.append(node);
+   words.push({node, start: index, end: index + text.length});
+  }
+  if (!words.length) return [{start: 0, end: 0, text: '', spoken: ''}];
   projectorText.after(measure);
-  const range = document.createRange();
-  const boundaries = [0];
-  let offset = 0;
-  let previousTop;
-  for (const character of encoded) {
-   range.setStart(node, offset);
-   range.setEnd(node, offset + character.length);
-   const rect = range.getClientRects()[0];
-   if (rect?.width > 0) {
-    if (previousTop !== undefined && Math.abs(rect.top - previousTop) > .5) boundaries.push(offset);
-    previousTop = rect.top;
+  const width = measure.getBoundingClientRect().width;
+  const lines = [];
+  for (const {node, start, end} of words) {
+   const rect = node.getBoundingClientRect();
+   const line = lines.at(-1);
+   if (line && rect.top === line.top) {
+    line.end = end;
+    line.width = rect.right - line.left;
+   } else {
+    lines.push({start, end, top: rect.top, left: rect.left, width: rect.width});
    }
-   offset += character.length;
   }
   measure.remove();
-  boundaries.push(encoded.length);
   const offsets = encoded === readable ? null : sourceOffsets(readable, encoded, projector.dataset.font === 'fraktur' ? frakturGlyphs : scriptGlyphs);
-  return boundaries.slice(0, -1).map((start, index) => {
-   const end = boundaries[index + 1];
-   return {start, end, text: encoded.slice(start, end).trim(), spoken: readable.slice(offsets?.[start] ?? start, offsets?.[end] ?? end).trim()};
-  });
+  return lines.map(line => ({
+   start: line.start,
+   end: line.end,
+   text: encoded.slice(line.start, line.end),
+   spoken: readable.slice(offsets?.[line.start] ?? line.start, offsets?.[line.end] ?? line.end),
+   // A single exceptionally long word may need a smaller size on a narrow display.
+   fontSize: width > 1 && line.width > width ? (Number(projectorSize.value) * (width - 1) / line.width) + 'px' : ''
+  }));
  }
 
  function showProjectionLine() {
   const {lines, lineIndex} = projection;
   const line = lines[lineIndex];
+  projectorText.style.fontSize = line.fontSize || '';
   projectorText.replaceChildren();
   appendVerseText(projectorText, line.spoken, document.createTextNode(line.text));
   projectorLineCount.textContent = 'Line ' + (lineIndex + 1) + ' of ' + lines.length;
@@ -336,6 +345,7 @@
    return;
   }
   projection.lines = null;
+  projectorText.style.fontSize = '';
   projectorText.replaceChildren();
   appendVerseText(projectorText, text, document.createTextNode(encoded));
   projectorStage.scrollTop = 0;

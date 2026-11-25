@@ -1,6 +1,11 @@
 (() => {
   const el = id => document.getElementById(id);
   let messages = [], selected = null, request = 0;
+  const verseSettings = el('daily-verse-settings');
+  const verseList = el('daily-verse-list');
+  const verseStatus = el('daily-verse-editor-status');
+  const saveVerses = el('save-daily-verses');
+  let verseListLoaded = false;
   async function api(path, data) {
     const response = await fetch('/api/feedback/' + path, data === undefined ? {} : {
       method:'POST', headers:{'Content-Type':'application/json','X-Feedback-Request':'1'}, body:JSON.stringify(data)
@@ -9,11 +14,63 @@
     if (response.status === 401) {
       el('login-form').hidden = false; el('inbox').hidden = true;
       selected = null; messages = []; el('detail').hidden = true; el('message-list').replaceChildren();
+      verseSettings.open = false; verseListLoaded = false;
     }
     if (!response.ok) throw new Error(value.error || 'Request failed.');
     return value;
   }
   function report(error) { el('admin-status').textContent = error.message || 'Could not connect. Please try again.'; }
+  function showVerseList(verses) {
+    verseList.value = verses.map(([id, chapter, number]) => {
+      const book = luther1912Catalog.find(book => book.id === id);
+      return book.name + ' ' + chapter + ':' + number;
+    }).join('\n');
+  }
+  async function readVerseList() {
+    const verses = new Map();
+    for (const line of verseList.value.split('\n').map(value => value.trim()).filter(Boolean)) {
+      const {book, chapter, first, last, error} = parseBibleReference(line);
+      if (error) throw new Error(error);
+      if (book.section !== 'nt') throw new Error('“' + line + '” is outside the New Testament.');
+      const chapters = await Luther1912.loadBook(book.id);
+      const numbers = new Set(chapters[chapter].map(([number]) => number));
+      for (let number = first; number <= last; number++) {
+        if (!numbers.has(number)) throw new Error(book.name + ' ' + chapter + ':' + number + ' was not found.');
+        const entry = [book.id, chapter, number];
+        verses.set(entry.join('/'), entry);
+      }
+    }
+    return [...verses.values()];
+  }
+  verseSettings.addEventListener('toggle', async () => {
+    if (!verseSettings.open || verseListLoaded) return;
+    verseListLoaded = true;
+    verseList.disabled = saveVerses.disabled = true;
+    verseStatus.textContent = 'Loading saved verses…';
+    try {
+      const {verses} = await api('daily-verses');
+      showVerseList(verses);
+      verseList.disabled = saveVerses.disabled = false;
+      verseStatus.textContent = '';
+    } catch (error) {
+      verseListLoaded = false;
+      verseStatus.textContent = error.message;
+    }
+  });
+  el('daily-verse-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    verseList.disabled = saveVerses.disabled = true;
+    verseStatus.textContent = 'Checking verses…';
+    try {
+      const {verses} = await api('daily-verses', {verses: await readVerseList()});
+      showVerseList(verses);
+      verseStatus.textContent = verses.length === 1 ? '1 verse saved.' : verses.length + ' verses saved.';
+    } catch (error) {
+      verseStatus.textContent = error.message;
+    } finally {
+      verseList.disabled = saveVerses.disabled = false;
+    }
+  });
   function list() {
     const filter = el('filter').value;
     const visible = messages.filter(m => filter === 'all' || (filter === 'unread' ? m.unread : m.status === filter));

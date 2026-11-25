@@ -38,6 +38,8 @@
  const bookButtons = new Map();
  let currentBook;
  let currentChapter;
+ let linkedVerse;
+ let focusLinkedVerse = false;
  let lastBookButton;
  let request = 0;
  let verseRows = [];
@@ -551,6 +553,16 @@
     fragment.append(row);
    }
    verses.replaceChildren(fragment);
+   const target = verseRows.find(verse => verse.number === linkedVerse)?.row;
+   if (target) {
+    target.dataset.linkedVerse = String(linkedVerse);
+    target.tabIndex = -1;
+    if (focusLinkedVerse) {
+     target.focus({preventScroll: true});
+     target.scrollIntoView({block: 'center'});
+    }
+   }
+   focusLinkedVerse = false;
    status.hidden = true;
   } catch {
    if (revision !== request) return;
@@ -559,16 +571,18 @@
   }
  }
 
- function show(bookId, chapter) {
-  const book = ordered.find(book => book.id === bookId) || ordered[0];
-  currentBook = book;
-  currentChapter = book.chapters.includes(chapter) ? chapter : book.chapters[0];
+ function show(bookId, chapter, verse) {
+  const book = ordered.find(book => book.id === bookId);
+  currentBook = book || ordered[0];
+  currentChapter = currentBook.chapters.includes(chapter) ? chapter : currentBook.chapters[0];
+  linkedVerse = book && currentChapter === chapter ? verse : undefined;
+  focusLinkedVerse = linkedVerse !== undefined;
   render();
  }
 
  function showFromHash() {
-  const [book, chapter] = location.hash.slice(1).split('/').map(Number);
-  show(book, chapter);
+  const [book, chapter, verse] = location.hash.slice(1).split('/').map(Number);
+  show(book, chapter, verse);
  }
 
  function navigate(book, chapter) {

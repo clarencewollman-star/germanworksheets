@@ -49,6 +49,8 @@ with tempfile.TemporaryDirectory() as directory:
     process = start()
     try:
         assert call('messages')[0] == 401
+        assert call('daily-verses', authorized=False)[1] == {'verses': []}
+        assert call('daily-verses', {'verses': [[43, 3, 16]]}, authorized=False)[0] == 401
         assert call('submit', {'message':'hello'}, {'Origin':'https://elsewhere.invalid'})[0] == 403
         assert call('submit', {'message':'hello'}, {'X-Feedback-Request':'0'})[0] == 403
         assert call('submit', {'message':''})[0] == 400
@@ -60,6 +62,12 @@ with tempfile.TemporaryDirectory() as directory:
         status, _, headers = call('login', {'username':'admin','password':'test-only-password'})
         assert status == 200 and 'HttpOnly' in headers['Set-Cookie'] and 'SameSite=Strict' in headers['Set-Cookie']
         cookie = headers['Set-Cookie'].split(';')[0]
+        assert call('daily-verses', {'verses': [[43, 3, 16]]}, {'X-Feedback-Request': '0'})[0] == 403
+        for invalid in ([[1, 1, 1]], [[43, 3, 999]], [[True, 3, 16]], [['43', 3, 16]]):
+            assert call('daily-verses', {'verses': invalid})[0] == 400
+        saved = [[43, 3, 16], [50, 4, 4]]
+        assert call('daily-verses', {'verses': saved + [saved[0]]})[1] == {'verses': saved}
+        assert call('daily-verses', authorized=False)[1] == {'verses': saved}
         status, inbox, _ = call('messages')
         assert status == 200 and inbox['unread'] == 1 and len(inbox['messages']) == 1
         identifier = inbox['messages'][0]['id']
@@ -73,6 +81,7 @@ with tempfile.TemporaryDirectory() as directory:
         process.terminate(); process.wait()
         process = start()
         assert call('messages')[0] == 401
+        assert call('daily-verses', authorized=False)[1] == {'verses': saved}
         _, _, headers = call('login', {'username':'admin','password':'test-only-password'})
         cookie = headers['Set-Cookie'].split(';')[0]
         assert call(path)[1]['status'] == 'Resolved'
@@ -80,6 +89,7 @@ with tempfile.TemporaryDirectory() as directory:
         assert call(path+'/screenshot')[0] == 404
         assert call('logout', {})[0] == 200
         assert call('messages')[0] == 401
+        assert call('daily-verses', {'verses': []})[0] == 401
         for _ in range(12):
             status, _, _ = call('submit', {'message':'test'})
         assert status == 429

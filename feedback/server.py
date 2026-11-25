@@ -10,6 +10,7 @@ import secrets
 import sqlite3
 import time
 from contextlib import contextmanager
+from functools import cache
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
@@ -27,6 +28,9 @@ SECURE = os.environ.get('FEEDBACK_COOKIE_SECURE', 'true').lower() != 'false'
 PREFIX = '/api/feedback'
 MAX_BODY = 7200000
 Image.MAX_IMAGE_PIXELS = 16000000
+ASSETS = Path(__file__).resolve().parents[1] / 'outputs' / 'assets'
+if not ASSETS.is_dir():
+    ASSETS = Path('/usr/share/nginx/html/assets')
 
 
 @contextmanager
@@ -53,6 +57,7 @@ with database() as db:
     CREATE TABLE IF NOT EXISTS setup (id INTEGER PRIMARY KEY CHECK(id=1), hash TEXT NOT NULL, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS attempts (identity TEXT, kind TEXT, created INTEGER);
+    CREATE TABLE IF NOT EXISTS daily_verses (id INTEGER PRIMARY KEY CHECK(id=1), verses TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS attempts_lookup ON attempts(identity, kind, created);
     ''')
     # Restarting the service revokes sessions, including after credential changes.
@@ -72,6 +77,34 @@ with database() as db:
 class RequestError(Exception):
     def __init__(self, code, message):
         self.code, self.message = code, message
+
+
+@cache
+def new_testament_ids():
+    catalog = (ASSETS / 'bible-catalog.js').read_text(encoding='utf-8').strip()
+    books = json.loads(catalog.removeprefix('const luther1912Catalog=').removesuffix(';'))
+    return {book['id'] for book in books if book['section'] == 'nt'}
+
+
+@cache
+def verse_numbers(book):
+    data = (ASSETS / 'bible-1912' / f'{book}.js').read_text(encoding='utf-8').strip()
+    chapters = json.loads(data.removeprefix(f'window.luther1912Books.set({book},').removesuffix(');'))
+    return {(int(chapter), number) for chapter, verses in chapters.items() for number, _ in verses}
+
+
+def validate_daily_verses(entries):
+    if not isinstance(entries, list) or len(entries) > 8000:
+        raise RequestError(400, 'Enter a valid list of Bible verses.')
+    unique = {}
+    for entry in entries:
+        if not isinstance(entry, list) or len(entry) != 3 or any(type(value) is not int for value in entry):
+            raise RequestError(400, 'Use a book, chapter, and verse for each entry.')
+        book, chapter, number = entry
+        if book not in new_testament_ids() or (chapter, number) not in verse_numbers(book):
+            raise RequestError(400, 'Choose verses from the New Testament in the Luther Bible 1912.')
+        unique.setdefault((book, chapter, number), None)
+    return list(unique)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -195,6 +228,10 @@ class Handler(BaseHTTPRequestHandler):
     def route(self, method):
         path = urlparse(self.path).path.removeprefix(PREFIX).strip('/')
         with database() as db:
+            if method == 'GET' and path == 'daily-verses':
+                row = db.execute('SELECT verses FROM daily_verses WHERE id=1').fetchone()
+                self.reply(200, {'verses': json.loads(row['verses']) if row else []})
+                return
             if method == 'GET' and path == 'setup-status':
                 self.reply(200, {'needsSetup': not bool(db.execute('SELECT 1 FROM admin').fetchone())})
                 return
@@ -304,6 +341,15 @@ class Handler(BaseHTTPRequestHandler):
                     return
             if method == 'POST':
                 data = self.body()
+                if path == 'daily-verses':
+                    verses = validate_daily_verses(data.get('verses'))
+                    db.execute('BEGIN IMMEDIATE')
+                    self.authenticated(db)
+                    db.execute('INSERT INTO daily_verses VALUES (1,?) ON CONFLICT(id) DO UPDATE SET verses=excluded.verses',
+                               (json.dumps(verses),))
+                    db.commit()
+                    self.reply(200, {'verses': verses})
+                    return
                 if path == 'logout':
                     db.execute('DELETE FROM sessions WHERE token=?', (self.token(),))
                     db.commit()

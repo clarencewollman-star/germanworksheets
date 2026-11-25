@@ -8,6 +8,8 @@
   <script src="assets/generated/theme.83c90c9eba70.js"></script>
   <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
   <link rel="stylesheet" href="assets/generated/app-theme.d205628dde68.css">
+  <link rel="stylesheet" href="assets/generated/fonts.66af5ca7de04.css">
+  <link rel="stylesheet" href="assets/generated/daily-verse.0706cf8ae18b.css">
   <style>
     .test-links { max-width: 34rem; display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
     .test-links .btn { display: flex; justify-content: space-between; }
@@ -16,6 +18,15 @@
 <body>
 <main>
   <h1>Test pages</h1>
+  <section class="card daily-verse" aria-labelledby="daily-verse-heading">
+    <h2 id="daily-verse-heading">Verse of the Day</h2>
+    <p class="daily-verse-status" role="status">Loading today’s verse…</p>
+    <a class="daily-verse-link stretched-link" hidden>
+      <span class="daily-verse-text" lang="de"></span>
+      <span class="daily-verse-plain visually-hidden" lang="de"></span>
+      <span class="daily-verse-reference"><span class="daily-verse-citation" lang="de"></span> <span aria-hidden="true">→</span></span>
+    </a>
+  </section>
   <nav aria-label="Test pages">
     <ul class="test-links">
       <li><a class="btn btn-outline-secondary" href="alphabetical-order-generator.html">Alphabetical Order <span aria-hidden="true">→</span></a></li>
@@ -25,8 +36,12 @@
     </ul>
   </nav>
 </main>
+<script src="assets/generated/bible-catalog.625f90aced90.js"></script>
+<script src="assets/generated/bible-data.e8961bf5199a.js"></script>
+<script src="assets/generated/font-conversion.456f06a3b48f.js"></script>
+<script src="assets/generated/daily-verse.0583925469c9.js"></script>
 <script src="assets/generated/app-shell.c1a81f1b949d.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.b1f8e667a149.js"></script>
+<script src="assets/generated/version.7a2abc23a818.js"></script>
 </body>
 </html>

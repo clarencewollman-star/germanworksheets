@@ -12,7 +12,8 @@ function convertWord(word){
 }
 function convert(text){return text.normalize('NFC').replace(/[A-Za-zÄÖÜäöüß]+/g,convertWord)}
 
-function convertFraktur(text){return text.replace(/[A-Za-zÄÖÜäöüß]+/g,word=>word.replace(/ch/g,'¡').replace(/ck/g,'¿').replace(/tz/g,'|').replace(/s$/,'–'))}
+// A soft hyphen marks a break inside the same word for long-s and round-s selection.
+function convertFraktur(text){return text.replace(/[A-Za-zÄÖÜäöüß]+(?:\u00ad[A-Za-zÄÖÜäöüß]+)*/g,word=>word.replace(/ch/g,'¡').replace(/ck/g,'¿').replace(/tz/g,'|').replace(/s$/,'–'))}
 
 // HANDSHFT.TTF conventions from the user's paired German/encoded hymn.
 // Word-specific forms remain editable in the Text Converter.

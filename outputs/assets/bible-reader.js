@@ -346,8 +346,12 @@
   const [number, source] = rows[index];
   const text = verseText(source);
   const encode = encoders[projector.dataset.font];
-  const display = projectorSyllables.checked ? splitGermanSyllables(text) : text;
-  const encoded = encode ? encode(display) : display;
+  const useMarkedBreaks = projectorSyllables.checked && encode === convertFraktur;
+  const separator = useMarkedBreaks ? '\u00ad' : '-';
+  const marked = projectorSyllables.checked ? splitGermanSyllables(text, separator) : text;
+  const display = useMarkedBreaks ? marked.replaceAll(separator, '-') : marked;
+  const converted = encode ? encode(marked) : marked;
+  const encoded = useMarkedBreaks ? converted.replaceAll(separator, '-') : converted;
   const reference = book.name + ' ' + chapter + ':' + number;
   if (projectorReference.textContent !== reference) projectorReference.textContent = reference;
   const lineMode = projectorLineMode.checked;

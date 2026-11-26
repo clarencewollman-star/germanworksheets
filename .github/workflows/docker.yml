@@ -30,7 +30,7 @@ jobs:
             if curl -fsS http://localhost:8080/ > /dev/null; then break; fi
             sleep 1
           done
-          for file in outputs/*.html outputs/assets/*.js outputs/assets/*.css outputs/assets/generated/*; do
+          for file in outputs/*.html outputs/assets/*.js outputs/assets/*.css outputs/assets/generated/* outputs/assets/fibel/*.pdf outputs/assets/fibel/beginner/*.pdf outputs/assets/fibel/illustrations/*.jpg; do
             curl -fsS "http://localhost:8080/${file#outputs/}" -o /tmp/served-file
             cmp "$file" /tmp/served-file
           done

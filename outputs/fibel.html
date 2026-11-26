@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="assets/generated/adminlte.min.f96a340f2a46.css">
   <link rel="stylesheet" href="assets/generated/app-theme.d205628dde68.css">
   <link rel="stylesheet" href="assets/generated/feedback.5e9a5e028c7c.css">
+  <link rel="stylesheet" href="assets/generated/fonts.66af5ca7de04.css">
+  <link rel="stylesheet" href="assets/generated/fibel-projector.df87ff90a8ff.css">
   <style>
     main > section + section { margin-top: 36px; }
     .fibel-stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr)); gap: 16px; list-style: none; padding: 0; margin: 24px 0 0; }
@@ -22,7 +24,26 @@
 <main>
   <a href="index.html">← German Worksheets</a>
   <h1>Fibel</h1>
-  <p>Read and draw with the <cite lang="de">Deutsche Fibel</cite> (1901). Each printable PDF has a drawing box above the text.</p>
+  <p>Project the <cite lang="de">Deutsche Fibel</cite> (1901), or print the reading and drawing worksheets.</p>
+  <section class="panel fibel-reader" aria-labelledby="fibel-reader-title">
+    <h2 id="fibel-reader-title">Fibel Projector</h2>
+    <div class="actions">
+      <div>
+        <label for="fibel-section">Section</label>
+        <select id="fibel-section"></select>
+      </div>
+      <div>
+        <label for="fibel-view">Show</label>
+        <select id="fibel-view">
+          <option value="section">Whole section</option>
+          <option value="line">One line at a time</option>
+        </select>
+      </div>
+      <button class="primary" id="fibel-project" type="button" aria-haspopup="dialog">Project</button>
+    </div>
+    <p class="fibel-transcription-note">Draft transcription of the supplied scan, with its original illustrations and handwriting samples. The scan skips pages 46 and 47.</p>
+    <div id="fibel-reading" class="fibel-reading"></div>
+  </section>
   <section aria-labelledby="fibel-beginner-title">
     <h2 id="fibel-beginner-title" lang="de">Kurze Lesestücke</h2>
     <p>Short passages for beginning readers, retyped in large Fraktur.</p>
@@ -69,10 +90,37 @@
     <li><a class="card fibel-story" href="assets/fibel/die-sterntaler.pdf"><span lang="de">Die Sterntaler</span><span>PDF · 2 pages</span></a></li>
     </ul>
   </section>
+  <dialog class="fibel-projector" id="fibel-projector" aria-label="Fibel projector">
+    <div id="fibel-projector-shell" class="fibel-projector-shell">
+      <header class="fibel-projector-controls">
+        <button type="button" id="fibel-back">← Back</button>
+        <button class="primary" type="button" id="fibel-next">Next →</button>
+        <label>Show
+          <select id="fibel-project-view">
+            <option value="section">Whole section</option>
+            <option value="line">One line at a time</option>
+          </select>
+        </label>
+        <label class="fibel-size">Text size
+          <input class="form-range" id="fibel-text-size" type="range" min="24" max="120" value="52">
+        </label>
+        <button type="button" id="fibel-full">Full screen</button>
+        <form method="dialog"><button type="submit">Exit projector</button></form>
+      </header>
+      <div class="fibel-projector-heading">
+        <h2 id="fibel-projector-title" lang="de"></h2>
+        <span id="fibel-progress" role="status"></span>
+      </div>
+      <div class="fibel-projector-stage" id="fibel-projector-stage" tabindex="0" aria-labelledby="fibel-projector-title"></div>
+    </div>
+  </dialog>
 </main>
+<script src="assets/generated/font-conversion.456f06a3b48f.js"></script>
+<script src="assets/generated/fibel-book.d53a2b402565.js"></script>
+<script src="assets/generated/fibel-projector.8a33c647cdcb.js"></script>
 <script src="assets/generated/app-shell.c1a81f1b949d.js"></script>
 <script src="assets/generated/adminlte.min.c0126e88bd3f.js"></script>
-<script src="assets/generated/version.7a2abc23a818.js"></script>
+<script src="assets/generated/version.5dd2a578d216.js"></script>
 <script src="assets/generated/update-check.3c11939acad8.js"></script>
 <script src="assets/generated/feedback.8f238172d090.js"></script>
 </body>

@@ -1,0 +1,143 @@
+.fibel-reader .actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.fibel-reader select {
+  max-width: min(34rem, 100%);
+}
+
+.fibel-transcription-note {
+  margin: 16px 0;
+}
+
+.fibel-reading {
+  max-height: 32rem;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--gw-border);
+  border-radius: 8px;
+}
+
+.fibel-reading h3 {
+  font-size: 1rem;
+}
+
+.fibel-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.fibel-line {
+  margin: 0;
+  color: inherit;
+  font: var(--fibel-font-size, 1.6rem)/1.45 Fraktur, serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fibel-illustrations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+  justify-items: start;
+}
+
+.fibel-illustrations img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 260px;
+  object-fit: contain;
+  background: white;
+  border: 1px solid var(--gw-border);
+  border-radius: 4px;
+}
+
+.fibel-illustrations :is(.fibel-writing, :only-child) {
+  grid-column: 1 / -1;
+}
+
+.fibel-projector {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+  background: white;
+  color: #17201d;
+  color-scheme: light;
+}
+
+.fibel-projector-shell {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  background: white;
+}
+
+.fibel-projector-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px clamp(12px, 3vw, 32px);
+  border-bottom: 1px solid #cad4cf;
+}
+
+.fibel-projector-controls label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+}
+
+.fibel-projector-controls input {
+  width: clamp(90px, 16vw, 160px);
+}
+
+.fibel-projector-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: baseline;
+  padding: 14px clamp(12px, 4vw, 64px) 0;
+}
+
+.fibel-projector-heading h2 {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+}
+
+.fibel-projector-stage {
+  overflow: auto;
+  padding: clamp(16px, 4vw, 64px);
+}
+
+.fibel-projector-stage .fibel-printed {
+  color: #17201d;
+}
+
+.fibel-projector-stage[data-view="line"] .fibel-content {
+  min-height: 100%;
+  align-content: center;
+}
+
+.fibel-projector-stage[data-view="line"] .fibel-printed {
+  display: inline-block;
+  white-space: pre;
+}
+
+@media (min-width: 860px) {
+  .fibel-content:has(.fibel-illustrations) {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 26%);
+  }
+}

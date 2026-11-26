@@ -20,5 +20,7 @@
 !outputs/assets/alphabet-reader/**
 !outputs/assets/doppellaute-reader/
 !outputs/assets/doppellaute-reader/**
+!outputs/assets/fibel/
+!outputs/assets/fibel/**
 !outputs/assets/tool-previews/
 !outputs/assets/tool-previews/**

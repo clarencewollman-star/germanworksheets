@@ -48,7 +48,7 @@
   return line;
  }
 
- function sectionContent(section, lines) {
+ function sectionContent(section, lines, picturesFirst = false) {
   const content = document.createElement('div');
   content.className = 'fibel-content';
   const text = document.createElement('div');
@@ -65,7 +65,8 @@
     if (writing) image.classList.add('fibel-writing');
     pictures.append(image);
    }
-   content.append(pictures);
+   if (picturesFirst) content.prepend(pictures);
+   else content.append(pictures);
   }
   return content;
  }
@@ -104,7 +105,7 @@
   next.disabled = sectionIndex === fibelSections.length - 1 && (!oneLine || lineIndex === lineCount - 1);
   back.setAttribute('aria-label', oneLine ? 'Previous line' : 'Previous section');
   next.setAttribute('aria-label', oneLine ? 'Next line' : 'Next section');
-  stage.replaceChildren(sectionContent(section, lines));
+  stage.replaceChildren(sectionContent(section, lines, true));
   stage.scrollTop = 0;
   fitLine();
  }
